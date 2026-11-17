@@ -1,0 +1,24 @@
+<main>
+  <h1>Mantenimiento por Sede</h1>
+  <p class="summary">Inventario de equipos e inspecciones preventivas por sede.</p>
+
+  <section aria-labelledby="api-title">
+    <h2 id="api-title">Estado de la API</h2>
+    <p role="status" [attr.data-status]="health.status()">
+      @switch (health.status()) {
+        @case ('ready') {
+          API disponible
+        }
+        @case ('unavailable') {
+          No se pudo conectar con la API
+        }
+        @default {
+          Comprobando disponibilidad…
+        }
+      }
+    </p>
+    <button type="button" (click)="health.refresh()" [disabled]="health.status() === 'checking'">
+      Volver a comprobar
+    </button>
+  </section>
+</main>

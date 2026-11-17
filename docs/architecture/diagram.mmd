@@ -1,0 +1,8 @@
+flowchart LR
+    Operator["Coordinador o técnico"] --> Web["Angular standalone<br/>NgRx SignalStore"]
+    Web -->|"GET /api/health"| Gateway["API Gateway<br/>HTTP API"]
+    Gateway --> Health["Lambda Node.js 24<br/>Health"]
+    Web -. "Inicio de sesión previsto" .-> OIDC["Proveedor OIDC"]
+    Web -. "Operaciones autenticadas previstas" .-> Gateway
+    Gateway -. "Rutas de dominio previstas" .-> Domain["Lambda de dominio<br/>Autorización por sede"]
+    Domain -. "Lectura y escritura previstas" .-> Data[("DynamoDB bajo demanda<br/>Equipos e inspecciones")]

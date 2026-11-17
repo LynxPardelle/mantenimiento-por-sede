@@ -1,0 +1,61 @@
+main {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 8vw, 6rem) 1.25rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.summary {
+  margin: 1rem 0 2.25rem;
+  color: #405d55;
+  font-size: 1.125rem;
+}
+
+section {
+  border: 1px solid #bdd1c7;
+  border-radius: 0.75rem;
+  background: white;
+  padding: 1.5rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+[role='status'] {
+  margin: 0.5rem 0 1.25rem;
+  color: #405d55;
+}
+
+[data-status='unavailable'] {
+  color: #8f2c24;
+}
+
+button {
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #1b4d3c;
+  border-radius: 0.4rem;
+  background: #1b4d3c;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  border-color: #b5c9c0;
+  background: #e4eee8;
+  color: #405d55;
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 2px solid #1b4d3c;
+  outline-offset: 3px;
+}
