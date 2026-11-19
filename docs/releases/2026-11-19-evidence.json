@@ -1,0 +1,115 @@
+{
+  "product": "SedePulso",
+  "verifiedOn": "2026-11-19",
+  "unitTests": {
+    "backend": 41,
+    "ci": 17,
+    "angular": 31
+  },
+  "environments": [
+    {
+      "environment": "development",
+      "commit": "31cc92795e80eec3d5ee3dbbfdd4a64f47a51837",
+      "branch": "development",
+      "run": 44627058265,
+      "attempt": 1,
+      "artifactId": 14578734056,
+      "manifestSha256": "83c46dca62459fa8e48661bce4c07c0b817db9d94553ba6a156f147f2ba9669a",
+      "domainChecks": 24,
+      "isolatedSignupChecks": 5,
+      "smokeIdentitiesDeleted": 3,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "login": 200,
+        "passwordRecovery": 200,
+        "directLambda": 403,
+        "directS3": 403,
+        "signupEnabled": true,
+        "billingEnabled": false,
+        "verifiedAt": "2026-11-19T22:22:19.510Z"
+      },
+      "email": {
+        "delivered": true,
+        "confirmedInApplication": true,
+        "initialSiteCreated": true,
+        "temporaryAccountAndDataDeleted": true,
+        "verifiedAt": "2026-11-19T21:18:51.413Z"
+      }
+    },
+    {
+      "environment": "testing",
+      "commit": "5d50187ce8a70edfbed5ecc87986cdea5a613e88",
+      "branch": "testing",
+      "run": 44628242897,
+      "attempt": 2,
+      "artifactId": 14581750821,
+      "manifestSha256": "0e7edb31cff2decb23e2dd1817454063374859948d7441f604228a2b68af217f",
+      "domainChecks": 24,
+      "isolatedSignupChecks": 5,
+      "smokeIdentitiesDeleted": 3,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "login": 200,
+        "passwordRecovery": 200,
+        "directLambda": 403,
+        "directS3": 403,
+        "signupEnabled": true,
+        "billingEnabled": false,
+        "verifiedAt": "2026-11-19T22:40:31.728Z"
+      },
+      "email": {
+        "delivered": true,
+        "confirmedInApplication": true,
+        "initialSiteCreated": true,
+        "temporaryAccountAndDataDeleted": true,
+        "verifiedAt": "2026-11-19T22:42:07.898Z"
+      }
+    },
+    {
+      "environment": "production",
+      "commit": "328f7f1b5ada366ad986b25bee1a8571c4448123",
+      "branch": "main",
+      "run": 44631382530,
+      "attempt": 2,
+      "artifactId": 14583212671,
+      "manifestSha256": "ccb189eeab0940bf0c565087ebf72c0bf731183deea5a3de287278eefddbde82",
+      "domainChecks": 24,
+      "isolatedSignupChecks": 5,
+      "smokeIdentitiesDeleted": 3,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "login": 200,
+        "passwordRecovery": 200,
+        "directLambda": 403,
+        "directS3": 403,
+        "signupEnabled": true,
+        "billingEnabled": false,
+        "verifiedAt": "2026-11-19T23:00:56.586Z"
+      },
+      "email": {
+        "delivered": true,
+        "confirmedInApplication": true,
+        "initialSiteCreated": true,
+        "temporaryAccountAndDataDeleted": true,
+        "verifiedAt": "2026-11-19T23:04:54.463Z"
+      },
+      "browserOAuth": {
+        "codeWithPkceS256": true,
+        "assignedSiteVisible": true,
+        "accessAfterReload": true,
+        "logout": true,
+        "appDeniedAfterLogout": true,
+        "verifiedAt": "2026-11-19T23:06:43.627Z"
+      }
+    }
+  ]
+}

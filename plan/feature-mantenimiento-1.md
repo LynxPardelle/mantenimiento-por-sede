@@ -10,7 +10,7 @@ tags: ['feature', 'angular', 'aws-sam', 'microservices', 'ssr']
 
 El producto adopta **SedePulso** y `sedepulso.lynxpardelle.com`. Carpeta, repositorio y archivo del plan conservan sus identificadores históricos. La [arquitectura vigente](../docs/architecture/ARCHITECTURE.md) separa plataforma/Access, Assets, Inspections y frontend en stacks con datos e IAM propios.
 
-El recorrido es iniciar sesión → elegir sede asignada → registrar equipo → programar inspección → consultar pendientes → cerrar → comprobar historial persistido. El piloto comercial requiere completar antes la verificación en nube con identidades y sedes aisladas.
+El recorrido es iniciar sesión → elegir sede asignada → registrar equipo → programar inspección → consultar pendientes → cerrar → comprobar historial persistido. La entrega técnica está publicada y verificada en los tres ambientes; el piloto comercial de cuatro semanas sigue pendiente. Su guía y métricas están preparadas, sin participante o aceptación inventados.
 
 ## 1. Requisitos
 
@@ -30,20 +30,20 @@ El recorrido es iniciar sesión → elegir sede asignada → registrar equipo �
 
 ## 2. Tareas y aceptación
 
-La evidencia de implementación y verificación se registra por ambiente. El recorrido técnico en development no completa la promoción a testing/producción ni el piloto comercial.
+La evidencia de implementación y verificación se registra por ambiente. La promoción development → testing → main terminó con verificaciones propias; publicar el producto no completa el piloto comercial de TASK-006.
 
 | Tarea | Entrega | Aceptación | Estado al 2026-11-19 |
 | --- | --- | --- | --- |
-| TASK-000 | Marca SedePulso en interfaz, metadatos, paquetes y documentación. | Títulos nuevos consistentes; referencias históricas explicadas y conservadas. | Implementada y verificada en development |
-| TASK-001 | Plataforma Cognito/JWT, Access/membresías, sedes y configuración pública. | Token inválido o de uso incorrecto rechazado; sede ajena `404`; rol insuficiente `403`; contexto resuelto por membresía. | Implementada y verificada en development |
-| TASK-002 | Stack Assets con tabla, alta transaccional e inventario paginado. | Reintento no duplica; cursor no cruza sede; IAM no permite leer tablas de otros servicios. | Implementada y verificada en development |
-| TASK-003 | Stack Inspections con programación, pendientes, historial y cierre. | Valida equipo por Assets; idempotencia y concurrencia correctas; elimina índice pendiente y confirma registro. | Implementada y verificada en development |
-| TASK-004 | Sección Angular diferida, sede, inventario, programación y SignalStore. | Alta y programación completas; error de red conserva formulario y permite reintento sin duplicar. | Implementada y verificada en development |
-| TASK-005 | Resultado e historial accesibles en móvil. | Cierre y consulta tras recarga; etiquetas, teclado y señal de éxito accesible. | Implementada y verificada en development |
-| TASK-006 | Recorrido técnico de dos organizaciones/sedes y piloto de cuatro semanas. | Aislamiento/reintentos en nube; operación real participante; métricas con periodo y denominadores. | Recorrido técnico en nube aprobado; piloto real pendiente |
-| TASK-007 | SSR Lambda, Function URL IAM, CloudFront/OAC, S3, ACM y DNS. | HTML/hidratación, estáticos, HTTPS, rechazo de acceso directo y API sin caché operativa. | Implementada y verificada en development |
-| TASK-008 | Empaquetado y orquestador de cuatro stacks. | Orden correcto y actualización de un servicio sin redesplegar los demás con contrato estable. | Implementada y verificada en development |
-| TASK-009 | CI de pruebas/build/lint y deploy condicional OIDC. | Checks pasan, rol y `AWS_DEPLOY_ROLE_ARN` configurados; promoción por PR permitido. | OIDC y publicación real de development aprobados; promoción pendiente |
+| TASK-000 | Marca SedePulso en interfaz, metadatos, paquetes y documentación. | Títulos nuevos consistentes; referencias históricas explicadas y conservadas. | Implementada y verificada en los tres ambientes |
+| TASK-001 | Plataforma Cognito/JWT, Access/membresías, sedes y configuración pública. | Token inválido o de uso incorrecto rechazado; sede ajena `404`; rol insuficiente `403`; contexto resuelto por membresía. | Implementada y verificada por API en los tres ambientes |
+| TASK-002 | Stack Assets con tabla, alta transaccional e inventario paginado. | Reintento no duplica; cursor no cruza sede; IAM no permite leer tablas de otros servicios. | Implementada y verificada por API en los tres ambientes |
+| TASK-003 | Stack Inspections con programación, pendientes, historial y cierre. | Valida equipo por Assets; idempotencia y concurrencia correctas; elimina índice pendiente y confirma registro. | Implementada y verificada por API en los tres ambientes |
+| TASK-004 | Sección Angular diferida, sede, inventario, programación y SignalStore. | Alta y programación completas; error de red conserva formulario y permite reintento sin duplicar. | Implementada y probada; publicada en los tres ambientes |
+| TASK-005 | Resultado e historial accesibles en móvil. | Cierre y consulta tras recarga; etiquetas, teclado y señal de éxito accesible. | Angular probado y demo recorrida; landing/registro móvil verificados |
+| TASK-006 | Recorrido técnico de dos organizaciones/sedes y piloto de cuatro semanas. | Aislamiento/reintentos en nube; operación real participante; métricas con periodo y denominadores. | Recorrido técnico aprobado en tres ambientes; piloto real pendiente |
+| TASK-007 | SSR Lambda, Function URL IAM, CloudFront/OAC, S3, ACM y DNS. | HTML/hidratación, estáticos, HTTPS, rechazo de acceso directo y API sin caché operativa. | Implementada y verificada en los tres ambientes |
+| TASK-008 | Empaquetado y orquestador de cuatro stacks. | Orden correcto y actualización de un servicio sin redesplegar los demás con contrato estable. | Orquestador implementado y entrega aprobada en tres ambientes |
+| TASK-009 | CI de pruebas/build/lint y deploy condicional OIDC. | Checks pasan, rol y `AWS_DEPLOY_ROLE_ARN` configurados; promoción por PR permitido. | OIDC, publicación y promoción aprobados en tres ambientes |
 | TASK-010 | Aprovisionamiento técnico y smoke real de development. | Usuarios/membresías aislados sin exponer secretos; recorrido persistido y cleanup comprobados. | Smoke real aprobado: 24 comprobaciones; 3 identidades efímeras eliminadas |
 
 ## 3. Secuencia
@@ -87,22 +87,24 @@ Los pasos técnicos que no requieren información del comprador pueden avanzar d
 
 ## 6. Evidencia de ejecución
 
+La evidencia vigente corresponde a los runs finales de development `31cc927`, testing `5d50187` y production `328f7f1`, todos SUCCESS con manifiesto limpio y verificaciones propias. Los enlaces, artefactos, capturas y límites están en el [cierre de entrega del 2026-11-19](../docs/releases/2026-11-19-sedepulso.md). Las filas de primera entrega conservan su contexto histórico.
+
 | Comprobación | Resultado |
 | --- | --- |
 | Punto de partida | Salud, Angular y SignalStore; commit inicial `3fbd4162e8e811cca0bfcccd18c362fbfd4bacef`. |
 | Revisión de arquitectura y nombre | SedePulso y microservicios documentados el 2026-11-19. |
 | Pruebas/build de la primera entrega | 2026-11-19: 20/20 Node, 12/12 Angular; build SSR sin warnings; cfn-lint de cuatro templates y diff --check aprobados. Recorrido real en navegador local con recarga de historial, consola limpia y vista móvil sin desbordamiento. |
-| Publicación development y DNS | Cuatro stacks completos en us-east-1. HTTPS verificado en https://sedepulso-development.lynxpardelle.com; CloudFront ECQSEKLOPMF1Q. Release frontend/full 6165448df2efdb91, backend c66e9d4f286e0523. |
+| Primera publicación development y DNS | Cuatro stacks completos en us-east-1. HTTPS verificado en https://sedepulso-development.lynxpardelle.com; CloudFront ECQSEKLOPMF1Q. Releases iniciales frontend/full 6165448df2efdb91 y backend c66e9d4f286e0523; los actuales se identifican por los manifiestos CI. |
 | Smoke Cognito/IAM/DynamoDB | 2026-11-19 13:05 America/Mexico_City: 24 comprobaciones aprobadas con usuarios Cognito y persistencia DynamoDB; 3 identidades temporales y sus datos eliminados. |
-| CI con rol OIDC | Bootstrap y variables por ambiente configurados; primera asunción real aprobada. TASK-013 registra el ajuste de permisos detectado antes de completar la publicación. |
-| Testing y producción | Pendientes; no inferirlos de development. |
+| CI con rol OIDC | Bootstrap y variables por ambiente configurados; asunción, deploy y tres smokes propios aprobados en cada ambiente. |
+| Testing y producción | Publicados y verificados; correo/confirmación propios y limpieza aprobados. Producción también completó PKCE/callback, sede, recarga, logout y guardia de sesión en navegador. |
 | Piloto real | Pendiente de operación participante, usuarios/sedes autorizados, cuatro semanas de métricas y decisión de renovación. Sin demanda validada. |
 
 ### Evidencia y límites de esta entrega
 
-- Base Git: `3fbd4162e8e811cca0bfcccd18c362fbfd4bacef`; rama de implementación `feature/sedepulso-serverless`. La base se publicó en GitHub en `c54b955` y la ampliación de registro/OIDC en `2045774`, seguida de recuperación en `f503e6c`. Los artefactos de la primera entrega anterior al commit registraban cambios locales; se conserva ese contexto histórico. Los artefactos registran `dirty=true` y hashes de los bytes publicados; no atribuir estos cambios al commit base.
+- Base Git histórica: `3fbd4162e8e811cca0bfcccd18c362fbfd4bacef`; rama de implementación conservada `feature/sedepulso-serverless`. La base se publicó en GitHub en `c54b955`, registro/OIDC en `2045774` y recuperación en `f503e6c`. Sólo los artefactos de la primera entrega anterior al commit registraban `dirty=true`; los manifiestos actuales de CI tienen commit/rama exactos y `dirty=false`. El [cierre de entrega](../docs/releases/2026-11-19-sedepulso.md) identifica los tres commits de runtime verificados y sus artefactos.
 - Stacks: `sedepulso-development-platform`, `sedepulso-development-assets`, `sedepulso-development-inspections` y `sedepulso-development-frontend`.
-- El navegador completó alta, programación, cierre e historial tras recargar contra la demostración local. La vista móvil no mostró desbordamiento; consola sin errores. En nube se verificó la página y la redirección real a Cognito con PKCE; el canje/callback está cubierto por pruebas Angular, y los tokens reales del smoke se obtuvieron mediante autenticación administrativa de identidades efímeras.
+- El navegador completó alta, programación, cierre e historial tras recargar contra la demostración local. La API real de los tres ambientes verificó persistencia y aislamiento con JWT. En producción el navegador completó correo, login PKCE S256/callback, sede coordinadora, recarga, logout y rechazo de `/app` sin sesión; los tokens de los smokes API se obtuvieron mediante autenticación administrativa de identidades efímeras. El registro y la landing también se verificaron en móvil. No se presenta todo el CRUD UI como recorrido manual ejecutado en cada ambiente.
 - HTTPS, HTML SSR y JavaScript devolvieron `200`; acceso anónimo directo a Function URL y objeto S3 devolvió `403`.
 - Reportes locales ignorados: `infra/.artifacts/smoke-development.json`, `web-development.json`, `manifest.json` y `development.json`. Capturas: `test-results/sedepulso-public.jpg` y `sedepulso-mobile.jpg`.
 - Templates empaquetados y manifiesto se archivaron en el bucket privado versionado por ambiente/release/servicio. El despliegue verifica hashes antes de publicar.
@@ -127,20 +129,20 @@ Los pasos técnicos que no requieren información del comprador pueden avanzar d
 
 | Tarea | Entrega | Evidencia/estado |
 | --- | --- | --- |
-| TASK-011 | Landing comercial con propuesta, casos de uso, FAQ y planes. | Implementada y cubierta por pruebas Angular; publicación por CI. |
-| TASK-012 | Registro, confirmación/reenvío y aprovisionamiento aislado. | 13 pruebas Node de onboarding; formularios y cliente Cognito probados. Correo real recibido y confirmado desde /registro en development a las 21:18:51 UTC, con sede coordinadora automática y limpieza de cuenta/datos temporales comprobada. |
-| TASK-013 | OIDC real y roles por ambiente, sin claves de larga duración. | Bootstrap `sedepulso-ci-oidc` configurado. Run `44615962505` en commit `3c681a0` aprobó verify, deploy de cuatro stacks y los tres smokes. El fallo WAF inicial se corrigió con permisos sobre ARN exacto, conservando boundaries, pool y tablas. |
+| TASK-011 | Landing comercial con propuesta, casos de uso, FAQ y planes. | Publicada y verificada en los tres ambientes; capturas de producción y móvil. |
+| TASK-012 | Registro, confirmación/reenvío y aprovisionamiento aislado. | Onboarding, formularios y cliente Cognito probados. Correo real confirmado en development 21:18:51, testing 22:42:07 y production 23:04:54 UTC; sede coordinadora automática y cleanup comprobados. Login/logout browser producción 23:06:43 UTC. |
+| TASK-013 | OIDC real y roles por ambiente, sin claves de larga duración. | Completada: los tres runs finales pasaron verify/deploy/smokes con roles por ambiente, boundaries conservadas y WAF sobre pools exactos. Evidencia en runbook OIDC y cierre de entrega. |
 | TASK-014 | Recuperación de Access mediante backup/restauración aislada. | Aprobada: marcador comparado, tabla/backup/marcador temporales eliminados. Ocho pruebas de guardas y linaje; alcance en runbook. |
 | TASK-015 | Propuesta Piloto, Operación y Red. | Documentada; sólo Piloto habilitado. Sin Stripe, precios, pagos ni conversión automática. |
-| TASK-016 | Promoción development → testing → main con verificaciones. | PR #8 y #9 integrados en development; PR #10 propone testing. Se corrige la conservación del reporte de alta antes de completar la promoción. |
-| TASK-017 | Resolver observaciones de PR #10 antes de promover. | Cargas y escrituras serializadas desde store y controles para conservar inventario/pendientes iniciales; bootstrap del bucket privado/versionado antes de CFN; alarma HTTP API 5xx para errores manejados. Pruebas de regresión aprobadas; publicación final y resolución de hilos pendientes de CI. |
-| TASK-018 | Verificar primera creación con roles OIDC. | Primer deploy testing detectó TagResource requerido por HTTP API Stage. Una prueba STS con API temporal confirmó el permiso exacto y eliminó su recurso. Política separada y excepción W3037 local a ella; 16/16 pruebas CI y lint aprobados. Nueva promoción/reintento pendientes. |
-| TASK-019 | Permitir configuración de access logs en primera creación. | Segunda creación detectó CreateLogDelivery. Prueba STS Stage+AccessLogSettings aprobada y temporales eliminados, policy compartida intacta. Siete acciones documentadas de configuración en us-east-1, sin lectura global de eventos; 17/17 CI y lint aprobados. Auditoría del resto de dependencias habilitadas sin otra omisión obligatoria clara. |
+| TASK-016 | Promoción development → testing → main con verificaciones. | Completada: PR #10/#15/#17 hacia testing y PR #18 hacia main, con publicación y comprobaciones propias por ambiente, sin bypass de protecciones. |
+| TASK-017 | Resolver observaciones de PR #10 antes de promover. | Completada: serialización de cargas/escrituras, bucket de bootstrap privado/versionado y alarma HTTP 5xx. Regresiones reproducidas/corregidas; cuatro hilos respondidos y resueltos. |
+| TASK-018 | Verificar primera creación con roles OIDC. | Completada: TagResource de Stage demostrado con STS y en CREATE real de testing/production. Excepción W3037 limitada a su managedpolicy; temporales retirados y ambas tablas huérfanas vacías eliminadas con guardias, conservando tabla activa. |
+| TASK-019 | Permitir configuración de access logs en primera creación. | Completada: siete acciones finitas de configuración en us-east-1, sin lectura global de eventos; 17/17 CI y lint aprobados. Stage+logging y recepción real de health200 verificados, temporales retirados y policy compartida preservada en pruebas. |
 
 Fuentes de ejecución remota: [PR #8](https://github.com/LynxPardelle/mantenimiento-por-sede/pull/8), [Actions](https://github.com/LynxPardelle/mantenimiento-por-sede/actions/workflows/ci.yml) y artefactos JSON por ambiente. Un check de promoción valida el origen de la rama; la aceptación del ambiente exige el job de despliegue y sus tres comprobaciones.
 
 El ejercicio de recuperación del 2026-11-19 verificó un marcador en una copia de Access y terminó su limpieza a las 20:55:37 UTC; no acredita todavía recuperación coordinada de todos los dominios ni un RTO/RPO comercial.
 
-La ampliación de registro y entrega pasó 41/41 pruebas backend, 10/10 de CI y 24/24 de Angular; la corrección posterior de revisión amplía a 15/15 de CI y 31/31 de Angular. Build SSR y lint aprobados. En development se verificó la landing ampliada, el registro móvil sin desbordamiento y la confirmación real desde la aplicación. Capturas: `docs/screenshots/sedepulso-landing-development.jpg` y `sedepulso-registro-confirmado.jpg`. El buzón autorizado sólo se usó para esta prueba; no se versionan dirección, código, contraseña, tokens o datos personales.
+Verificación final: 41/41 pruebas backend, 17/17 de CI y 31/31 de Angular, build SSR y lint aprobados. Cada ambiente pasó 24 comprobaciones de dominio, cinco de alta aislada y web/orígenes privados; tres reportes y manifiesto descargados/comprobados por run. Las capturas y commits exactos están en el [cierre de entrega](../docs/releases/2026-11-19-sedepulso.md). El buzón autorizado sólo se usó para cuentas de prueba eliminadas; no se versionan dirección, código, contraseña, tokens o datos personales.
 
 La [guía operativa del piloto](../docs/producto/piloto-operativo.md) prepara semanas 0–4, métricas y decisión de continuidad; no acredita participante, aceptación ni precio.

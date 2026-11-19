@@ -86,7 +86,7 @@ Development usa `sedepulso-development.lynxpardelle.com`, testing `sedepulso-tes
 
 S3 bloquea acceso público. La Function URL de SSR usa `AWS_IAM`; la política permite CloudFront con `SourceArn` de la distribución y los permisos `lambda:InvokeFunctionUrl` y `lambda:InvokeFunction`. Los servicios de negocio pasan por el autorizador HTTP API.
 
-Los logs tienen retención de 14 días y no deben incluir JWT, notas, contraseñas ni cuerpos personales. Las alarmas de errores existen como señales; un canal y destinatario de notificación requieren configuración. Las tablas usan capacidad bajo demanda y conservación de datos. Comprobar recuperación y backups antes de usar datos reales.
+Los logs tienen retención de 14 días y no deben incluir JWT, notas, contraseñas ni cuerpos personales. Las alarmas Lambda detectan fallos de invocación; `ApiServerErrors` monitoriza HTTP API `5xx` por `ApiId`, incluyendo respuestas de error manejadas. Las tres alarmas y la recepción real de access logs de salud se comprobaron; un canal y destinatario de notificación requieren configuración. Las tablas usan capacidad bajo demanda y conservación de datos. El ejercicio de Access pasó con un marcador restaurado y limpieza verificada; la recuperación coordinada de todos los dominios y RTO/RPO comerciales requieren un ensayo adicional antes del piloto con datos reales.
 
 La demostración local se limita a localhost y datos aislados. La validación real incluye Cognito, IAM, DynamoDB, dos organizaciones, dos sedes, reintentos, cierre concurrente y rechazo de acceso directo a orígenes privados. Salud por sí sola no prueba este recorrido.
 

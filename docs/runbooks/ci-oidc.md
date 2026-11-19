@@ -53,7 +53,7 @@ Crear un stage con `AccessLogSettings` requiere además las acciones dependiente
 
 La segunda creación de testing demostró esa dependencia con AccessDenied en CreateLogDelivery. Una prueba STS con API HTTP, grupo y policy propios temporales confirmó creación completa de stage con destino de logging. Se retiraron API/stage, grupo y policy propios, y el hash de la policy compartida AWSLogDeliveryWrite20150319 permaneció idéntico antes/después. En producción los permisos sólo son usados por CloudFormation al gestionar los stacks autorizados; no se modifica manualmente ninguna policy compartida. `update-stage --access-log-settings '{}'` es un no-op, no un procedimiento para desactivar logging.
 
-El primer intento de testing quedó en ROLLBACK_COMPLETE antes de crear el pool. La tabla AccessTable recién creada se conservó por Retain, vacía y sin mutaciones; la metadata del stack fallido se puede retirar tras comprobar que no quedan otros recursos activos. Registrar esa tabla retenida para revisión posterior, sin borrarla como parte de la recuperación.
+Los dos primeros intentos de testing quedaron en ROLLBACK_COMPLETE antes de crear el pool. Las dos tablas AccessTable nuevas se conservaron temporalmente por Retain mientras se retiraba únicamente la metadata de los stacks fallidos. Después de verificar el ambiente completo se eliminaron esas dos tablas huérfanas: se comprobaron ARN, TableId, fecha de creación, tags exactos y diferencia frente a la tabla activa; Scan consistente con Count=0 y sin LastEvaluatedKey en ambas. La eliminación se confirmó con ResourceNotFound a las 22:42:37/38Z del 19 de noviembre de 2026. La tabla activa, otras tablas y backups se conservaron.
 
 ## Registro de Cognito
 
@@ -67,7 +67,7 @@ La integración WAF → Cognito no entrega el contexto ResourceTag en esa autori
 
 La primera creación de un ambiente requiere dos fases: crear la plataforma con `SignupWebAclArn` vacío, volver a ejecutar el bootstrap administrador para descubrir y autorizar el ARN recién creado, y desplegar de nuevo con el ACL configurado. No publicar el frontend antes de terminar la asociación y las verificaciones. Al sustituir un pool en el futuro, repetir ese bootstrap; nunca ampliar el alcance a todos los pools para evitarlo.
 
-El 19 de noviembre de 2026 el primer deploy OIDC de development confirmó la federación, pero la asociación falló por ese contexto de tags ausente. El rollback intentó quitar las nuevas permissions boundaries y revertir atributos Cognito aditivos, ambas operaciones impedidas. Se completó conservando las boundaries y omitiendo únicamente `HealthFunctionRole`, `AccessFunctionRole`, `ConfigFunctionRole` y `UserPool`. La siguiente publicación debe realinear esos recursos con el template aprobado y restaurar los triggers de alta; no recrear el pool o las tablas ni habilitar la eliminación de boundaries para resolverlo.
+El 19 de noviembre de 2026 el primer deploy OIDC de development confirmó la federación, pero la asociación falló por ese contexto de tags ausente. El rollback intentó quitar las nuevas permissions boundaries y revertir atributos Cognito aditivos, ambas operaciones impedidas. Se completó conservando las boundaries y omitiendo únicamente `HealthFunctionRole`, `AccessFunctionRole`, `ConfigFunctionRole` y `UserPool`. El siguiente deploy, run 44615962505, realineó esos recursos, recreó los triggers y completó los tres smokes. Los runs posteriores confirmaron el estado sano: ese incidente quedó resuelto sin recrear el pool o las tablas ni habilitar la eliminación de boundaries.
 
 ## Cambios sólo de documentación
 
@@ -93,6 +93,36 @@ Antes de subir el template CI, que supera el límite inline de CloudFormation, e
 En un push a una rama de entrega, el workflow verifica pruebas/build/lint, asume OIDC, empaqueta y despliega. Después ejecuta smoke de dominio, alta/organización aislada y comprobación web/orígenes privados; conserva sólo los reportes JSON seleccionados como artefactos GitHub.
 
 Crear los roles no prueba la federación completa. La evidencia de asunción OIDC y de publicación se obtiene del run real de GitHub para cada rama. Revisar fallos de permisos concretos antes de ampliar una política; conservar los límites de ambiente y runtime.
+
+## Validación real del 19 de noviembre de 2026
+
+La promoción development → testing → main terminó con los cuatro stacks de cada ambiente completos, federación OIDC real y los tres smokes verdes: dominio, alta/organización aislada y web/orígenes privados. Los reruns de testing y production continuaron el mismo push y SHA después del bootstrap exacto; no utilizaron workflow_dispatch ni otro commit.
+
+| Ambiente | Rama / commit de runtime | Run verificado | Intento | Artefacto final |
+| --- | --- | --- | --- | --- |
+| development | development / `31cc92795e80eec3d5ee3dbbfdd4a64f47a51837` | [44627058265](https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44627058265) — SUCCESS | 1 | `14578734056` |
+| testing | testing / `5d50187ce8a70edfbed5ecc87986cdea5a613e88` | [44628242897](https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44628242897) — SUCCESS | 2 | `14581750821` |
+| production | main / `328f7f1b5ada366ad986b25bee1a8571c4448123` | [44631382530](https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44631382530) — SUCCESS | 2 | `14583212671` |
+
+Cada artefacto final contiene manifest.json y los reportes smoke, signup y web del ambiente. En un rerun se seleccionó el artifact ID más reciente por created_at; no se eliminó la evidencia del primer intento. Los IDs y SHA anteriores identifican la aplicación verificada, aunque después se promueva documentación sin volver a desplegar runtime.
+
+El stack `sedepulso-ci-oidc` quedó actualizado y `COGNITO_WAF_POOL_READY=true` en los tres environments. Los tres permisos dependientes de Cognito para WAF se restringen actualmente a estos ARN, verificados contra su stack y tags:
+
+| Ambiente | UserPool autorizado |
+| --- | --- |
+| development | `arn:aws:cognito-idp:us-east-1:765932874577:userpool/us-east-1_Tq2A8S7Eh` |
+| testing | `arn:aws:cognito-idp:us-east-1:765932874577:userpool/us-east-1_VPWb3vlTZ` |
+| production | `arn:aws:cognito-idp:us-east-1:765932874577:userpool/us-east-1_aB0goxGzq` |
+
+Una lectura administrativa limitada al grupo ApiAccessLogs de cada stack confirmó entrega real del GET /api/health con status 200 generado por sus smokes. Sólo se registraron boolean y timestamp, sin copiar eventos ni conceder lectura global de logs a los roles CI/CFN.
+
+| Ambiente | Health 200 entregado (UTC) | ApiId de la alarma verificada |
+| --- | --- | --- |
+| development | 22:21:22.173Z | `v2y5bhxj51` |
+| testing | 22:39:31.169Z | `drvnkpw6pb` |
+| production | 23:00:04.523Z | `f19ijtny5a` |
+
+Las tres alarmas ApiServerErrors se comprobaron con DescribeStackResource y DescribeAlarms: AWS/ApiGateway, métrica 5xx, dimensión ApiId exacta, Sum/300s, threshold 1 con GreaterThanOrEqualToThreshold y TreatMissingData=notBreaching. AlarmActions está vacío: existe el detector, el canal de notificación sigue pendiente. No se inyectaron fallos ni se alteró artificialmente el estado de las alarmas.
 
 ## Fuentes primarias
 
