@@ -16,6 +16,7 @@ npm --prefix frontend ci
 npm --prefix frontend test -- --watch=false
 npm --prefix frontend run build
 node --test infra/test/*.test.mjs
+node --test infra/ci/*.test.mjs
 cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/frontend.yaml
 node infra/tools/package.mjs
 ```
@@ -24,17 +25,38 @@ Para la demostración: `node infra/tools/serve-local.mjs` y, en otra terminal, `
 
 ## Desplegar development
 
-Desde la raíz:
+El workflow obtiene `COGNITO_WAF_POOL_READY` de las variables del environment de GitHub. El orquestador exige un valor explícito `true` o `false`; no basta con invocar el script sin esa configuración. El bootstrap `node infra/tools/configure-ci.mjs` comprueba los pools existentes y publica ese valor, los roles OIDC/CloudFormation y `SIGNUP_WEB_ACL_ARN` por ambiente.
 
-```sh
+Para una plataforma de development ya creada y cuyo pool exacto fue autorizado por el bootstrap, desde PowerShell en la raíz:
+
+```powershell
+$env:COGNITO_WAF_POOL_READY = 'true'
 node infra/tools/deploy.mjs --environment development
 ```
 
-El comando modifica AWS. Despliega plataforma → Assets → Inspections → frontend. Conservar región, nombres y outputs de los stacks. El dominio esperado es `https://sedepulso-development.lynxpardelle.com`; comprobar emisión del certificado, DNS y CloudFront antes de informar disponibilidad.
+Usar `true` únicamente después de que `configure-ci.mjs` haya descubierto y autorizado el ARN real del pool. El comando modifica AWS y despliega plataforma → Assets → Inspections → frontend. Conservar región, nombres y outputs de los stacks. El dominio esperado es `https://sedepulso-development.lynxpardelle.com`; comprobar emisión del certificado, DNS y CloudFront antes de informar disponibilidad.
+
+La creación inicial de cada ambiente tiene dos fases:
+
+1. Ejecutar `configure-ci.mjs` desde la sesión administradora autorizada. Si el pool todavía no existe, el bootstrap publica `COGNITO_WAF_POOL_READY=false`. La primera ejecución del workflow crea sólo la plataforma con `SignupWebAclArn` vacío y se detiene deliberadamente con salida no exitosa. No publica los servicios ni el frontend, y no acredita una entrega del ambiente.
+2. Volver a ejecutar `configure-ci.mjs`: descubre el pool creado, comprueba cuenta/región/tags y autoriza su ARN exacto para la asociación WAF. Publica `COGNITO_WAF_POOL_READY=true`. Reejecutar el workflow del mismo ambiente para asociar el ACL y completar servicios, frontend y comprobaciones.
+
+Para crear únicamente esa plataforma inicial en una sesión local de development:
+
+```powershell
+$env:COGNITO_WAF_POOL_READY = 'false'
+node infra/tools/deploy.mjs --environment development --service platform
+node infra/tools/configure-ci.mjs
+$env:COGNITO_WAF_POOL_READY = 'true'
+node infra/tools/deploy.mjs --environment development
+```
+
+La detención tras la primera instrucción de despliegue es intencional: comprobar que la plataforma terminó de crearse y ejecutar después las instrucciones siguientes. La variable local no sustituye la verificación del bootstrap. Si se reemplaza un pool, repetir estas fases para autorizar el nuevo ARN; no ampliar los permisos a todos los pools. El [runbook OIDC](ci-oidc.md) explica el alcance de roles, las variables y el enrutamiento WAF del registro.
 
 Para actualizar un único servicio conservando sus contratos:
 
-```sh
+```powershell
+$env:COGNITO_WAF_POOL_READY = 'true'
 node infra/tools/deploy.mjs --environment development --service assets
 ```
 
@@ -74,10 +96,10 @@ Un `200` de salud sólo verifica Health. No confirma autorización, tablas o ren
 
 Configurar un rol OIDC de alcance mínimo y `AWS_DEPLOY_ROLE_ARN` para GitHub Actions. Mientras no esté verificado, distinguir CI de pruebas de un pipeline capaz de publicar. Seguir [development → testing → main](../promocion.md): testing usa `sedepulso-testing.lynxpardelle.com`; producción, `sedepulso.lynxpardelle.com`.
 
-Los logs tienen retención de 14 días. Las alarmas de errores requieren definir canal y destinatario para entregar avisos. Verificar recuperación y backup antes del piloto con datos reales.
+Los logs tienen retención de 14 días. Las alarmas de errores requieren definir canal y destinatario para entregar avisos. El ejercicio de recuperación de Access en development pasó el 2026-11-19: comparó un marcador restaurado con su valor esperado y comprobó la eliminación de tabla, backup y marcador temporales. El [runbook de recuperación](recuperacion.md) conserva alcance y evidencia. La recuperación coordinada de inventario, inspecciones, identidad y estáticos, así como RTO/RPO comerciales, todavía no está acreditada.
 
 Si falla un stack, revisar sus eventos y resolver antes de continuar con los dependientes. No borrar tablas, usuarios o buckets para forzar una entrega. Los recursos conservados pueden sobrevivir a la retirada del stack.
 
-El empaquetado registra hashes de código, dependencias y templates, más commit, rama y estado local. El despliegue comprueba esos hashes y conserva templates empaquetados y manifiesto en el bucket privado de artefactos por ambiente/release/servicio. Antes de actualizar SSR se suben los estáticos con nuevos hashes; los anteriores se conservan. Para revertir código, redesplegar el template empaquetado anterior compatible del servicio; la restauración de datos todavía requiere una prueba de recuperación. Los cambios de esquema o contrato requieren una migración; revertir sólo una Lambda puede ser insuficiente.
+El empaquetado registra hashes de código, dependencias y templates, más commit, rama y estado local. El despliegue comprueba esos hashes y conserva templates empaquetados y manifiesto en el bucket privado de artefactos por ambiente/release/servicio. Antes de actualizar SSR se suben los estáticos con nuevos hashes; los anteriores se conservan. Para revertir código, redesplegar el template empaquetado anterior compatible del servicio. El ejercicio de Access no sustituye un procedimiento de recuperación coordinada de la aplicación. Los cambios de esquema o contrato requieren una migración; revertir sólo una Lambda puede ser insuficiente.
 
 Registrar fecha, ambiente, commit o estado local, pruebas, outputs, URL comprobada y pendientes. No marcar testing, producción o piloto completos cuando sólo se comprobó development.
