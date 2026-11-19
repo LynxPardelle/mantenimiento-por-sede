@@ -137,6 +137,18 @@ export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPre
       template.Resources[name] = { Type: 'AWS::IAM::ManagedPolicy', Properties: { ManagedPolicyName: `sedepulso-ci-${environment}-resources-${index + 1}`, PolicyDocument: policy(items) } };
       return { Ref: name };
     });
+    // HTTP API V2 CreateStage enforces this literal action despite the public IAM catalog.
+    // Confirmed with the live CFN provider and an exact-ARN STS probe; see the CI runbook.
+    const stageTaggingPolicy = id + 'ApiStageTaggingPolicy';
+    template.Resources[stageTaggingPolicy] = {
+      Type: 'AWS::IAM::ManagedPolicy',
+      Metadata: { 'cfn-lint': { config: { ignore_checks: ['W3037'] } } },
+      Properties: {
+        ManagedPolicyName: `sedepulso-ci-${environment}-api-stage-tagging`,
+        PolicyDocument: policy([statement('CreateTaggedHttpApiStage', ['apigateway:TagResource'], [`arn:aws:apigateway:${region}::/apis/*/stages`, `arn:aws:apigateway:${region}::/apis/*/stages/*`])]),
+      },
+    };
+    template.Resources[id + 'CloudFormationRole'].Properties.ManagedPolicyArns.push({ Ref: stageTaggingPolicy });
     template.Resources[id + 'GitHubRole'] = {
       Type: 'AWS::IAM::Role',
       Properties: {
