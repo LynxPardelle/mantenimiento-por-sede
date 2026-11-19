@@ -133,7 +133,7 @@ Los pasos técnicos que no requieren información del comprador pueden avanzar d
 | TASK-014 | Recuperación de Access mediante backup/restauración aislada. | Aprobada: marcador comparado, tabla/backup/marcador temporales eliminados. Ocho pruebas de guardas y linaje; alcance en runbook. |
 | TASK-015 | Propuesta Piloto, Operación y Red. | Documentada; sólo Piloto habilitado. Sin Stripe, precios, pagos ni conversión automática. |
 | TASK-016 | Promoción development → testing → main con verificaciones. | PR #8 y #9 integrados en development; PR #10 propone testing. Se corrige la conservación del reporte de alta antes de completar la promoción. |
-| TASK-017 | Resolver observaciones de PR #10 antes de promover. | Refrescos antiguos invalidados tras mutaciones exitosas; bootstrap del bucket privado/versionado antes de CFN; alarma HTTP API 5xx para errores manejados. Pruebas locales aprobadas; publicación y resolución de hilos pendientes de CI. |
+| TASK-017 | Resolver observaciones de PR #10 antes de promover. | Cargas y escrituras serializadas desde store y controles para conservar inventario/pendientes iniciales; bootstrap del bucket privado/versionado antes de CFN; alarma HTTP API 5xx para errores manejados. Pruebas de regresión aprobadas; publicación final y resolución de hilos pendientes de CI. |
 
 Fuentes de ejecución remota: [PR #8](https://github.com/LynxPardelle/mantenimiento-por-sede/pull/8), [Actions](https://github.com/LynxPardelle/mantenimiento-por-sede/actions/workflows/ci.yml) y artefactos JSON por ambiente. Un check de promoción valida el origen de la rama; la aceptación del ambiente exige el job de despliegue y sus tres comprobaciones.
 

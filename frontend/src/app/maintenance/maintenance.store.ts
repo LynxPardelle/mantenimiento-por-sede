@@ -67,7 +67,7 @@ export const MaintenanceStore = signalStore(
 
     async function refresh(appendAssets = false, appendPending = false): Promise<void> {
       const site = store.site();
-      if (!site) return;
+      if (!site || store.saving()) return;
       const current = generation;
       const read = ++readGeneration;
       patchState(store, { loading: true, error: '' });
@@ -188,7 +188,7 @@ export const MaintenanceStore = signalStore(
       },
       async createAsset(payload: AssetInput): Promise<boolean> {
         const site = store.site();
-        if (!site || store.saving() || site.role !== 'coordinator') return false;
+        if (!site || store.loading() || store.saving() || site.role !== 'coordinator') return false;
         const current = generation;
         const operation = `${site.id}/asset`;
         patchState(store, { saving: true, error: '', notice: '' });
@@ -201,10 +201,7 @@ export const MaintenanceStore = signalStore(
           );
           idempotency.delete(operation);
           if (current !== generation) return false;
-          readGeneration++;
           patchState(store, {
-            loading: false,
-            error: '',
             assets: uniqueById([asset, ...store.assets()]),
             notice: 'Equipo registrado. Ya puedes programar su primera inspección.',
           });
@@ -218,7 +215,7 @@ export const MaintenanceStore = signalStore(
       },
       async scheduleInspection(assetId: string, dueDate: string): Promise<boolean> {
         const site = store.site();
-        if (!site || store.saving() || site.role !== 'coordinator') return false;
+        if (!site || store.loading() || store.saving() || site.role !== 'coordinator') return false;
         const current = generation;
         const operation = `${site.id}/${assetId}/schedule`;
         const payload = { dueDate };
@@ -233,10 +230,7 @@ export const MaintenanceStore = signalStore(
           );
           idempotency.delete(operation);
           if (current !== generation) return false;
-          readGeneration++;
           patchState(store, {
-            loading: false,
-            error: '',
             pending:
               dueDate <= store.dueThrough()
                 ? uniqueById([inspection, ...store.pending()])
@@ -254,7 +248,7 @@ export const MaintenanceStore = signalStore(
       },
       async completeInspection(inspection: Inspection, payload: Completion): Promise<boolean> {
         const site = store.site();
-        if (!site || store.saving()) return false;
+        if (!site || store.loading() || store.saving()) return false;
         const current = generation;
         patchState(store, { saving: true, error: '', notice: '' });
         try {
@@ -266,10 +260,7 @@ export const MaintenanceStore = signalStore(
             ),
           );
           if (current !== generation) return false;
-          readGeneration++;
           patchState(store, {
-            loading: false,
-            error: '',
             pending: store.pending().filter((item) => item.id !== inspection.id),
             notice:
               'Inspección completada. El historial se consulta de nuevo para confirmar el registro.',
