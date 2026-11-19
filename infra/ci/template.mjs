@@ -1,3 +1,5 @@
+import { addPilotResources } from './pilot.mjs';
+
 const environments = ['development', 'testing', 'production'];
 const repository = 'LynxPardelle/mantenimiento-por-sede';
 const version = '2012-10-17';
@@ -187,5 +189,6 @@ export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPre
     template.Outputs[id + 'CloudFormationRoleArn'] = { Value: { 'Fn::GetAtt': [id + 'CloudFormationRole', 'Arn'] } };
     template.Outputs[id + 'RuntimeBoundaryArn'] = { Value: { Ref: id + 'RuntimeBoundary' } };
   }
+  addPilotResources(template, { account, region, providerArn, subjectPrefix });
   return template;
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-async function application() {
+async function application({ now = () => new Date('2026-11-19T18:00:00Z') } = {}) {
   let modules;
   try {
     modules = await Promise.all([
@@ -29,7 +29,7 @@ async function application() {
     }
     return JSON.parse(response.body);
   };
-  const assets = createAssetsHandler({ repository: repositories.assets, authorize });
+  const assets = createAssetsHandler({ repository: repositories.assets, authorize, now });
   const getAsset = async (identity, siteId, assetId) => {
     const response = await assets({ internalAction: 'getAsset', identity, siteId, assetId });
     if (response.statusCode !== 200) {
@@ -39,7 +39,7 @@ async function application() {
     }
     return JSON.parse(response.body);
   };
-  const inspections = createInspectionsHandler({ repository: repositories.inspections, authorize, getAsset, now: () => new Date('2026-11-19T18:00:00Z') });
+  const inspections = createInspectionsHandler({ repository: repositories.inspections, authorize, getAsset, now });
   return { access, assets, inspections };
 }
 
@@ -73,6 +73,18 @@ test('asset creation is atomic, idempotent and rejects changed reuse', async () 
   assert.equal(new Set(responses.map((response) => payload(response).id)).size, 1);
   assert.equal(payload(await app.assets(request('GET', assetPath))).items.length, 1);
   assert.equal((await app.assets(request('POST', assetPath, { ...assetBody, name: 'Different' }, { key: 'same' }))).statusCode, 409);
+});
+
+test('asset creation records server UTC time and preserves it on a later idempotent retry', async () => {
+  let current = new Date('2026-11-20T00:15:00+02:00');
+  const app = await application({ now: () => current });
+  const original = await addAsset(app);
+  assert.equal(original.createdAt, '2026-11-19T22:15:00.000Z');
+
+  current = new Date('2026-11-21T07:30:00Z');
+  assert.deepEqual(await addAsset(app), original);
+  assert.deepEqual(payload(await app.assets(request('GET', assetPath))).items, [original]);
+  assert.equal((await app.assets(request('POST', assetPath, { ...assetBody, createdAt: '1900-01-01T00:00:00Z' }, { key: 'forged-time' }))).statusCode, 400);
 });
 
 test('authorization isolates organizations, sites and coordinator writes', async () => {
@@ -124,6 +136,22 @@ test('scheduling enforces assignment, role, real dates and idempotency', async (
   assert.deepEqual(payload(await app.inspections(request('POST', path, { dueDate: '2026-11-20' }, { key: 'once' }))), payload(one));
   assert.equal((await app.inspections(request('POST', path, { dueDate: '2026-11-21' }, { key: 'once' }))).statusCode, 409);
   assert.equal((await app.inspections(request('GET', '/api/v1/sites/north/inspections', undefined, { query: { status: 'pending', dueThrough: 'not-a-date' } }))).statusCode, 400);
+});
+
+test('inspection scheduling records server UTC time and preserves it on a later idempotent retry', async () => {
+  let current = new Date('2026-11-20T00:15:00+02:00');
+  const app = await application({ now: () => current });
+  const asset = await addAsset(app);
+  const path = `${assetPath}/${asset.id}/inspections`;
+  const event = request('POST', path, { dueDate: '2026-11-23' }, { key: 'scheduled-time' });
+  const original = await app.inspections(event);
+  assert.equal(original.statusCode, 201);
+  assert.equal(payload(original).createdAt, '2026-11-19T22:15:00.000Z');
+
+  current = new Date('2026-11-21T07:30:00Z');
+  assert.deepEqual(await app.inspections(event), original);
+  assert.deepEqual(payload(await app.inspections(request('GET', path))).items, [payload(original)]);
+  assert.equal((await app.inspections(request('POST', path, { dueDate: '2026-11-23', createdAt: '1900-01-01T00:00:00Z' }, { key: 'forged-time' }))).statusCode, 400);
 });
 
 test('pagination cannot cross site, organization or query boundaries', async () => {

@@ -62,6 +62,8 @@ for (const [environment, branch] of [['development', 'development'], ['testing',
   gh(['variable', 'set', 'CLOUDFORMATION_ROLE_ARN', '--repo', repository, '--env', environment, '--body', cloudFormationRole]);
   gh(['variable', 'set', 'SIGNUP_WEB_ACL_ARN', '--repo', repository, '--env', environment, '--body', outputs.SignupWebAclArn]);
   gh(['variable', 'set', 'COGNITO_WAF_POOL_READY', '--repo', repository, '--env', environment, '--body', String(Boolean(userPoolArns[environment]))]);
+  gh(['variable', 'set', 'PILOT_OBSERVER_ROLE_ARN', '--repo', repository, '--env', environment, '--body', outputs[id + 'PilotRoleArn']]);
+  gh(['variable', 'set', 'PILOT_REPORT_BUCKET', '--repo', repository, '--env', environment, '--body', outputs.PilotBucketName]);
   summary.push({ environment, branch, deployRole, cloudFormationRole, runtimeBoundary: outputs[id + 'RuntimeBoundaryArn'], wafUserPoolArn: userPoolArns[environment] || null });
 }
 await writeFile(join(out, 'ci-oidc.json'), JSON.stringify({ repository, subjectPrefix, region, providerArn, signupWebAclArn: outputs.SignupWebAclArn, stack: 'sedepulso-ci-oidc', environments: summary }, null, 2) + '\n');

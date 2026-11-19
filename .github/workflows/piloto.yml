@@ -1,0 +1,41 @@
+name: SedePulso - observación privada del piloto
+
+on:
+  schedule:
+    - cron: '17 13 * * *' # 07:17 GMT-6; scheduling is best effort, not real time.
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [development, testing, production]
+        default: production
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    if: (github.event_name == 'schedule' && github.ref_name == 'main') || (github.event_name == 'workflow_dispatch' && ((inputs.environment == 'production' && github.ref_name == 'main') || inputs.environment == github.ref_name))
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: ${{ github.event_name == 'schedule' && 'production' || inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: sedepulso-pilot-${{ github.event_name == 'schedule' && 'production' || inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.PILOT_OBSERVER_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Observar sin modificar datos de operación
+        run: node infra/tools/observe-pilot.mjs --environment "$PILOT_ENV"
+        env:
+          PILOT_ENV: ${{ github.event_name == 'schedule' && 'production' || inputs.environment }}
+          PILOT_REPORT_BUCKET: ${{ vars.PILOT_REPORT_BUCKET }}

@@ -16,6 +16,22 @@ Recoger códigos de sede/equipo, tipo de equipo, semana, zona, vencimiento, esta
 
 Conservar periodos, conteos, tiempos agregados, incidencias y decisiones en una bitácora privada. No guardar información del participante en este repositorio público. Separar operación real y pruebas; marcar faltantes sin sustituirlos por ceros.
 
+## Instrumentación y seguimiento preparados
+
+El cálculo del piloto y el colector operacional están implementados en `infra/pilot/`; `infra/tools/observe-pilot.mjs` comprueba salud, Stripe deshabilitado, stacks, tablas y alarmas antes de persistir agregados privados. Su despliegue y la ejecución OIDC deben acreditarse con runs reales por ambiente; tener el código no acredita un piloto en marcha.
+
+El workflow `piloto.yml` define observación diaria de producción a las 07:17 GMT-6, con ejecución manual y rol OIDC separado del despliegue y del runtime del producto. El heartbeat local de este chat `sedepulso-seguimiento-del-piloto` está activo a las 08:00 GMT-6 para revisar resultados y pendientes, sin SLA. Cada revisión comprueba una frescura máxima de 26 horas. Fallos del observador aparecen en GitHub Actions; no se envían correos desde este flujo. Alarmas sin canal de notificación no prueban entrega de avisos.
+
+La inscripción depende de un registro privado explícito, inicialmente `{ "schemaVersion": 1, "cohorts": [] }`. Sin participante real acordado el resultado permanece `awaiting-participant`, sin semana ni porcentajes comerciales. El corte de producción del 19 de noviembre de 2026 a las 23:23 UTC encontró cero registros persistidos en Access, Assets e Inspections; no permite inferir visitas ni interesados. `plan=pilot` y un alta de producto no sustituyen alcance, consentimiento, acuerdo, zona, inicio y objetivos de una operación real.
+
+El observador consulta sólo las sedes inscritas y separa `technical` de `enrolled-real`. Los reportes se guardan en el bucket privado `sedepulso-pilot-765932874577-us-east-1`, nunca como artefactos públicos. La primera observación de una semana cerrada se congela sin sobrescribirla y se reutiliza en los reportes posteriores. Se definen 180 días para reportes actuales y 90 para versiones no actuales; el registro no tiene expiración automática. Verificar la política desplegada antes de comunicarla como efectiva.
+
+Las altas de equipo y programaciones nuevas guardan `createdAt` UTC del servidor y los reintentos conservan el valor original. No se completa retrospectivamente la fecha de registros anteriores. Las lecturas entre tablas no son una instantánea atómica: mostrar cobertura y límites de reconstrucción. Los totales de metadata de DynamoDB son aproximados, se actualizan aproximadamente cada seis horas e incluyen idempotencia/pruebas; no son personas activas ni clientes.
+
+La evidencia estructural automática comprueba presencia de resultado, nota, autor y fecha. La utilidad de la nota, la búsqueda de historial, el esfuerzo humano, los costes y la respuesta a una oferta necesitan evidencia privada adicional; permanecen sin medir hasta recogerla. No sustituir esas observaciones por actividad técnica.
+
+El [runbook de métricas](../runbooks/piloto-metricas.md) contiene comandos para retomar desde remoto, límites de permisos, cálculos, almacenamiento y plantilla privada de semanas 0 a 4. La [plantilla de registro](piloto-registro.example.json) es exclusivamente técnica, con identificadores y metas ficticios; no es un cliente ni debe inscribirse como `enrolled-real`.
+
 ## Semanas 1 a 4
 
 | Momento | Acción y evidencia que debe quedar |
