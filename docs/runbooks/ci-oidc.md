@@ -80,6 +80,8 @@ node infra/tools/configure-ci.mjs
 
 `infra/ci/template.mjs` produce el template; `infra/.artifacts/ci-template.json` es generado e ignorado. El script reutiliza el proveedor, despliega roles y publica las variables de los environments. El manifiesto local `infra/.artifacts/ci-oidc.json` contiene ARN y nombres, sin credenciales.
 
+Antes de subir el template CI, que supera el límite inline de CloudFormation, el bootstrap comprueba el bucket dedicado `sedepulso-artifacts-<cuenta>-us-east-1`. Sólo un 404/NoSuchBucket permite crearlo, bloquear sus cuatro opciones de acceso público y habilitar versionado. Si ya existe, verifica propietario, región, privacidad y versionado sin cambiar su configuración; un 403 u otro fallo se propaga y no intenta crear otro bucket. `--template-only` sale antes de esta preparación y no crea recursos AWS.
+
 En un push a una rama de entrega, el workflow verifica pruebas/build/lint, asume OIDC, empaqueta y despliega. Después ejecuta smoke de dominio, alta/organización aislada y comprobación web/orígenes privados; conserva sólo los reportes JSON seleccionados como artefactos GitHub.
 
 Crear los roles no prueba la federación completa. La evidencia de asunción OIDC y de publicación se obtiene del run real de GitHub para cada rama. Revisar fallos de permisos concretos antes de ampliar una política; conservar los límites de ambiente y runtime.

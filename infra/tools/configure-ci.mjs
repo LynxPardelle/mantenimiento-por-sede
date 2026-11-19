@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildCiTemplate } from '../ci/template.mjs';
 import { discoverUserPools } from '../ci/pools.mjs';
+import { ensureArtifactBucket } from '../ci/artifacts.mjs';
 import { aws, stackOutputs } from './aws.mjs';
 
 const region = 'us-east-1';
@@ -36,7 +37,7 @@ if (process.argv.includes('--template-only')) {
   console.log(JSON.stringify({ templatePath, account, providerArn }));
   process.exit(0);
 }
-const bucket = `sedepulso-artifacts-${account}-${region}`;
+const { bucket } = ensureArtifactBucket(aws, { account, region });
 aws(['cloudformation', 'deploy', '--region', region, '--stack-name', 'sedepulso-ci-oidc', '--template-file', templatePath, '--s3-bucket', bucket, '--s3-prefix', 'bootstrap/ci', '--capabilities', 'CAPABILITY_NAMED_IAM', '--no-fail-on-empty-changeset', '--tags', 'Product=sedepulso', 'Purpose=github-oidc'], { json: false, quiet: false });
 const outputs = stackOutputs('sedepulso-ci-oidc', region);
 const existing = JSON.parse(gh(['api', `repos/${repository}/environments`])).environments;

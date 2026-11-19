@@ -42,6 +42,19 @@ Resources:
   ApiAccessLogs:
     Type: AWS::Logs::LogGroup
     Properties: {RetentionInDays: 14}
+  ApiServerErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - respuestas HTTP 5xx, incluidos errores manejados por los servicios'
+      Namespace: AWS/ApiGateway
+      MetricName: 5xx
+      Dimensions: [{Name: ApiId, Value: !Ref HttpApi}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
   UserPool:
     Type: AWS::Cognito::UserPool
     DeletionPolicy: Retain

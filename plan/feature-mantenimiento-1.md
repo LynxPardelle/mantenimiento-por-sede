@@ -133,9 +133,12 @@ Los pasos técnicos que no requieren información del comprador pueden avanzar d
 | TASK-014 | Recuperación de Access mediante backup/restauración aislada. | Aprobada: marcador comparado, tabla/backup/marcador temporales eliminados. Ocho pruebas de guardas y linaje; alcance en runbook. |
 | TASK-015 | Propuesta Piloto, Operación y Red. | Documentada; sólo Piloto habilitado. Sin Stripe, precios, pagos ni conversión automática. |
 | TASK-016 | Promoción development → testing → main con verificaciones. | PR #8 y #9 integrados en development; PR #10 propone testing. Se corrige la conservación del reporte de alta antes de completar la promoción. |
+| TASK-017 | Resolver observaciones de PR #10 antes de promover. | Refrescos antiguos invalidados tras mutaciones exitosas; bootstrap del bucket privado/versionado antes de CFN; alarma HTTP API 5xx para errores manejados. Pruebas locales aprobadas; publicación y resolución de hilos pendientes de CI. |
 
 Fuentes de ejecución remota: [PR #8](https://github.com/LynxPardelle/mantenimiento-por-sede/pull/8), [Actions](https://github.com/LynxPardelle/mantenimiento-por-sede/actions/workflows/ci.yml) y artefactos JSON por ambiente. Un check de promoción valida el origen de la rama; la aceptación del ambiente exige el job de despliegue y sus tres comprobaciones.
 
 El ejercicio de recuperación del 2026-11-19 verificó un marcador en una copia de Access y terminó su limpieza a las 20:55:37 UTC; no acredita todavía recuperación coordinada de todos los dominios ni un RTO/RPO comercial.
 
-La ampliación de registro y entrega pasó 41/41 pruebas backend, 10/10 de CI y 24/24 de Angular; build SSR y lint aprobados. En development se verificó la landing ampliada, el registro móvil sin desbordamiento y la confirmación real desde la aplicación. Capturas: `docs/screenshots/sedepulso-landing-development.jpg` y `sedepulso-registro-confirmado.jpg`. El buzón autorizado sólo se usó para esta prueba; no se versionan dirección, código, contraseña, tokens o datos personales.
+La ampliación de registro y entrega pasó 41/41 pruebas backend, 10/10 de CI y 24/24 de Angular; la corrección posterior de revisión amplía a 15/15 de CI y 31/31 de Angular. Build SSR y lint aprobados. En development se verificó la landing ampliada, el registro móvil sin desbordamiento y la confirmación real desde la aplicación. Capturas: `docs/screenshots/sedepulso-landing-development.jpg` y `sedepulso-registro-confirmado.jpg`. El buzón autorizado sólo se usó para esta prueba; no se versionan dirección, código, contraseña, tokens o datos personales.
+
+La [guía operativa del piloto](../docs/producto/piloto-operativo.md) prepara semanas 0–4, métricas y decisión de continuidad; no acredita participante, aceptación ni precio.

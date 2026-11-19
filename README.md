@@ -22,7 +22,7 @@ Development está publicado y verificado en [sedepulso-development.lynxpardelle.
 
 La landing explica el producto y compara los planes. `/registro` solicita organización, sede, zona horaria, correo y contraseña; después de confirmar el código recibido se crea un espacio propio con rol coordinador. Las pertenencias existentes se conservan y el cliente no elige roles ni organizaciones internas.
 
-Piloto está disponible gratuitamente en esta etapa, sin tarjeta ni cobros automáticos. Operación y Red están en diseño; precios y funciones adicionales deben validarse antes de venderse. Stripe no está integrado. Consulta la [propuesta de planes](docs/producto/planes-y-suscripciones.md) y el [contrato de registro](docs/contracts/registration.md).
+Piloto está disponible gratuitamente en esta etapa, sin tarjeta ni cobros automáticos. Operación y Red están en diseño; precios y funciones adicionales deben validarse antes de venderse. Stripe no está integrado. Consulta la [propuesta de planes](docs/producto/planes-y-suscripciones.md), la [guía de piloto de cuatro semanas](docs/producto/piloto-operativo.md) y el [contrato de registro](docs/contracts/registration.md).
 
 ## Desarrollo local
 
@@ -48,15 +48,19 @@ Abre `http://localhost:4200`. El proxy envía `/api` al adaptador en `127.0.0.1:
 npm --prefix frontend test -- --watch=false
 npm --prefix frontend run build
 node --test infra/test/*.test.mjs
+node --test infra/ci/*.test.mjs
 cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/frontend.yaml
 ```
 
-Para empaquetar y desplegar development:
+Para empaquetar y desplegar development desde PowerShell, una vez completado el [bootstrap OIDC y vinculado el pool exacto](docs/runbooks/ci-oidc.md):
 
-```sh
+```powershell
 node infra/tools/package.mjs
+$env:COGNITO_WAF_POOL_READY = 'true'
 node infra/tools/deploy.mjs --environment development
 ```
+
+Un ambiente nuevo usa primero `COGNITO_WAF_POOL_READY=false`; el script crea sólo plataforma y se detiene. Repetir el bootstrap y reejecutar el workflow original de push con el pool preparado, antes de publicar el resto. Las entregas habituales se hacen por GitHub Actions.
 
 El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) explica requisitos, identidades técnicas, smoke y actualización de un servicio. Testing y producción siguen `development → testing → main`.
 
