@@ -126,9 +126,9 @@ jobs:
             infra/.artifacts/smoke-development.json
             infra/.artifacts/smoke-testing.json
             infra/.artifacts/smoke-production.json
-            infra/.artifacts/signup-smoke-development.json
-            infra/.artifacts/signup-smoke-testing.json
-            infra/.artifacts/signup-smoke-production.json
+            infra/.artifacts/signup-development.json
+            infra/.artifacts/signup-testing.json
+            infra/.artifacts/signup-production.json
             infra/.artifacts/web-development.json
             infra/.artifacts/web-testing.json
             infra/.artifacts/web-production.json

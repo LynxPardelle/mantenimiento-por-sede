@@ -1,18 +1,18 @@
 # Planes y suscripciones de SedePulso
 
-Estado: propuesta de producto al 2026-11-19. Sólo Piloto está habilitado. Stripe, cobros, cambio de plan y renovación automática no están activos.
+Estado: propuesta de producto al 2026-11-19. Piloto es el único acceso implementado para esta etapa. Stripe, cobros, cambio de plan y renovación automática no están activos. La publicación, el envío de correo y la confirmación del registro se verifican por ambiente en el [plan de ejecución](../../plan/feature-mantenimiento-1.md); este documento no acredita por sí mismo disponibilidad operativa.
 
 ## Propuesta inicial
 
 SedePulso vende claridad sobre qué equipo revisar, en qué sede y quién dejó el último resultado. La hipótesis de cobro es una mensualidad por sede activa, con carga inicial de inventario como servicio opcional. Debe validarse con una operación real; publicar una landing no acredita demanda.
 
-| Plan | Persona y trabajo principal | Disponible hoy | Alcance que se propone desarrollar | Modelo comercial a validar |
+| Plan | Persona y trabajo principal | Capacidades implementadas | Alcance que se propone desarrollar | Modelo comercial a validar |
 | --- | --- | --- | --- | --- |
 | Piloto | Responsable que empieza con una sede y quiere probar el recorrido completo. | Registro con correo confirmado, organización y sede inicial propias, cuenta individual coordinadora, inventario, programación manual, pendientes, resultado con nota e historial. | Medición de uso y acompañamiento de una operación participante. | Gratuito en esta etapa, sin tarjeta ni conversión automática a cobro. |
 | Operación | Coordinador y técnicos que necesitan trabajar juntos en una sede. | El motor de permisos coordinador/técnico y la evidencia ya existen; la administración se hace mediante herramientas técnicas. | Invitaciones y roles administrables desde la aplicación, exportación y automatización de inspecciones recurrentes, con pruebas y límites definidos antes de venderlos. | Mensualidad por sede; evaluar capacidad incluida y evitar que el cobro incentive compartir cuentas. Precio pendiente. |
 | Red | Responsable de varias sedes que necesita comparar y coordinar la operación. | Aislamiento por organización y selección de sedes asignadas en el motor actual. | Administración de múltiples sedes, visión consolidada, informes y configuración acompañada. Integraciones se cotizarían sólo al existir un alcance viable. | Paquete por número de sedes activas y servicios de puesta en marcha separados. Precio pendiente. |
 
-La comparación pública distingue lo disponible de lo que está en diseño. Operación y Red no tienen checkout ni promesas de fecha. No se ofrecen sensores, imágenes, trabajo sin conexión, SLA o soporte permanente como prestaciones actuales.
+La comparación pública distingue lo disponible de lo que está en diseño. Las capacidades existentes del motor de permisos y sedes no convierten Operación o Red en planes contratables. Ambos siguen sin checkout, prestaciones comerciales habilitadas ni promesas de fecha. No se ofrecen recordatorios automáticos, sensores, imágenes, trabajo sin conexión, SLA o soporte permanente como prestaciones actuales.
 
 ## Límites y datos del plan
 
