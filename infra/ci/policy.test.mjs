@@ -5,6 +5,20 @@ import { buildCiTemplate } from './template.mjs';
 const template = buildCiTemplate({ account: '123456789012', providerArn: 'arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com', hostedZoneId: 'Z123456' });
 const cfnStatements = (id) => template.Resources[id + 'CloudFormationRole'].Properties.ManagedPolicyArns.flatMap(({ Ref }) => template.Resources[Ref].Properties.PolicyDocument.Statement);
 
+test('HTTP API logging enables documented delivery configuration without granting global log-data access', () => {
+  for (const environment of ['development', 'testing', 'production']) {
+    const id = environment[0].toUpperCase() + environment.slice(1);
+    const permission = cfnStatements(id).find(({ Sid }) => Sid === 'EnableHttpApiLogDelivery');
+    assert.ok(permission, 'AccessLogSettings requires the dependent CloudWatch log-delivery permissions');
+    assert.equal(permission.Resource, '*');
+    assert.deepEqual(permission.Condition, { StringEquals: { 'aws:RequestedRegion': 'us-east-1' } });
+    assert.deepEqual(permission.Action, ['logs:CreateLogDelivery', 'logs:GetLogDelivery', 'logs:UpdateLogDelivery', 'logs:DeleteLogDelivery', 'logs:ListLogDeliveries', 'logs:PutResourcePolicy', 'logs:DescribeResourcePolicies']);
+    assert.ok(!cfnStatements(id).some(({ Action, Resource }) => Resource === '*' && [Action].flat().some(action => ['logs:GetLogEvents', 'logs:FilterLogEvents', 'logs:CreateLogGroup', 'logs:DeleteLogGroup'].includes(action))));
+    const runtime = template.Resources[id + 'RuntimeBoundary'].Properties.PolicyDocument.Statement;
+    assert.ok(!runtime.some(({ Action }) => [Action].flat().includes('logs:PutResourcePolicy')));
+  }
+});
+
 test('HTTP API stage creation receives only its demonstrated literal tagging permission', () => {
   for (const environment of ['development', 'testing', 'production']) {
     const id = environment[0].toUpperCase() + environment.slice(1);
