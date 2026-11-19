@@ -1,0 +1,111 @@
+<a class="skip-link" href="#contenido">Ir al contenido</a>
+<header class="site-header">
+  <a class="brand" routerLink="/" aria-label="SedePulso, inicio"
+    ><span class="brand-mark" aria-hidden="true">∿</span>SedePulso<span
+      class="brand-dot"
+      aria-hidden="true"
+      >.</span
+    ></a
+  >
+  <span class="header-caption">Mantenimiento preventivo</span>
+  @if (auth.authenticated()) {
+    <a class="text-link" routerLink="/app">Abrir mi operación <span aria-hidden="true">↗</span></a>
+  } @else {
+    <button
+      class="text-link"
+      (click)="login()"
+      [disabled]="!auth.config() || auth.loading() || auth.config()?.authMode !== 'cognito'"
+    >
+      Entrar <span aria-hidden="true">↗</span>
+    </button>
+  }
+</header>
+<main id="contenido">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">
+        <span class="live-dot" aria-hidden="true"></span> Cada sede. Cada equipo. A tiempo.
+      </p>
+      <h1>El pulso de tu<br />mantenimiento,<br /><em>en un solo lugar.</em></h1>
+      <p class="hero-description">
+        Organiza equipos e inspecciones por sede. Tu equipo registra el resultado; tú conservas el
+        historial.
+      </p>
+      @if (auth.authenticated()) {
+        <a class="button primary" routerLink="/app"
+          >Ir a mi operación <span aria-hidden="true">→</span></a
+        >
+      } @else if (auth.config()?.authMode === 'demo') {
+        <button class="button primary" (click)="demo()">
+          Explorar la demostración local <span aria-hidden="true">→</span>
+        </button>
+        <p class="hint">Entorno de prueba con datos locales. No uses información real.</p>
+      } @else {
+        <button
+          class="button primary"
+          (click)="login()"
+          [disabled]="!auth.config() || auth.loading()"
+        >
+          Entrar a mi operación <span aria-hidden="true">→</span>
+        </button>
+      }
+      @if (auth.error() || error()) {
+        <p role="alert" class="error-text">{{ error() || auth.error() }}</p>
+        <button class="text-link" (click)="prepare()">Volver a intentar</button>
+      }
+      <p class="hero-footnote">
+        Para quienes coordinan el mantenimiento y quienes lo hacen posible.
+      </p>
+    </div>
+    <div
+      class="workflow-preview"
+      aria-label="El flujo de SedePulso: inventario, agenda e historial"
+    >
+      <div class="preview-caption">
+        <span>DEL EQUIPO AL REGISTRO</span><span aria-hidden="true">↙</span>
+      </div>
+      <ol class="workflow-list">
+        <li>
+          <span class="step-number">01</span>
+          <div>
+            <h2>Ubica cada equipo</h2>
+            <p>Inventario con nombre, tipo y estado en su sede.</p>
+          </div>
+          <span class="step-symbol" aria-hidden="true">⊞</span>
+        </li>
+        <li>
+          <span class="step-number">02</span>
+          <div>
+            <h2>Programa la revisión</h2>
+            <p>Inspecciones y vencimientos en la fecha local de la sede.</p>
+          </div>
+          <span class="step-symbol" aria-hidden="true">↗</span>
+        </li>
+        <li>
+          <span class="step-number">03</span>
+          <div>
+            <h2>Deja constancia</h2>
+            <p>Resultado, nota, responsable e historial para volver a consultar.</p>
+          </div>
+          <span class="step-symbol" aria-hidden="true">✓</span>
+        </li>
+      </ol>
+      <div class="preview-bottom">
+        <span class="pulse-line" aria-hidden="true"></span
+        ><span>Una operación con seguimiento.</span>
+      </div>
+    </div>
+  </section>
+  <section class="product-note">
+    <p class="eyebrow">CLARIDAD PARA EL DÍA A DÍA</p>
+    <h2>La próxima revisión tiene sede.<br />Y el último resultado, contexto.</h2>
+    <p>
+      El coordinador organiza el trabajo. El técnico consulta los pendientes y registra lo que
+      encontró, también desde el móvil.
+    </p>
+  </section>
+</main>
+<footer class="site-footer">
+  <span>SedePulso · Un producto de ZooBeriah Systems</span
+  ><a routerLink="/status">Estado del servicio</a>
+</footer>

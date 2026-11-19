@@ -1,0 +1,462 @@
+<a class="skip-link" href="#operacion">Ir a la operación</a>
+<header class="site-header workspace-header">
+  <a class="brand" routerLink="/"
+    ><span class="brand-mark" aria-hidden="true">∿</span>SedePulso<span
+      class="brand-dot"
+      aria-hidden="true"
+      >.</span
+    ></a
+  >
+  <div class="header-right">
+    @if (auth.isDemo()) {
+      <span class="demo-label">Demostración local</span>
+    }
+    <button class="text-link" (click)="auth.logout()">
+      Salir <span aria-hidden="true">↗</span>
+    </button>
+  </div>
+</header>
+<main id="operacion" class="workspace">
+  <aside class="workspace-nav">
+    <p class="eyebrow">TU OPERACIÓN</p>
+    <label for="site">Sede actual</label>
+    <select
+      id="site"
+      [value]="store.site()?.id || ''"
+      (change)="changeSite($event)"
+      [disabled]="store.saving() || !store.sites().length"
+    >
+      @if (!store.sites().length) {
+        <option value="">Sin sedes asignadas</option>
+      }
+      @for (site of store.sites(); track site.id) {
+        <option [value]="site.id">{{ site.name }}</option>
+      }
+    </select>
+    @if (store.site(); as site) {
+      <p class="site-meta">
+        {{ site.timeZone }}<br />{{ site.role === 'coordinator' ? 'Coordinación' : 'Técnico' }}
+      </p>
+    }
+    <nav aria-label="Vistas de mantenimiento" class="view-nav">
+      <button
+        [class.active]="activeTab() === 'pending'"
+        [attr.aria-pressed]="activeTab() === 'pending'"
+        (click)="activeTab.set('pending')"
+      >
+        <span aria-hidden="true">↗</span> Pendientes
+        <span class="count"
+          >{{ store.pending().length }}{{ store.pendingNextToken() ? '+' : '' }}</span
+        >
+      </button>
+      <button
+        [class.active]="activeTab() === 'assets'"
+        [attr.aria-pressed]="activeTab() === 'assets'"
+        (click)="activeTab.set('assets')"
+      >
+        <span aria-hidden="true">⊞</span> Equipos
+      </button>
+      <button
+        [class.active]="activeTab() === 'history'"
+        [attr.aria-pressed]="activeTab() === 'history'"
+        (click)="activeTab.set('history')"
+      >
+        <span aria-hidden="true">↺</span> Historial
+      </button>
+    </nav>
+    <p class="nav-note">El trabajo pertenece a una sede.<br />El registro conserva su contexto.</p>
+  </aside>
+  <div class="workspace-content">
+    <div class="workspace-title">
+      <div>
+        <p class="eyebrow">MANTENIMIENTO PREVENTIVO</p>
+        <h1>{{ store.site()?.name || 'Tu operación' }}</h1>
+      </div>
+      <button
+        class="button secondary small"
+        [disabled]="store.loading() || store.saving()"
+        (click)="store.site() ? store.refresh() : initialize()"
+      >
+        <span aria-hidden="true">↻</span> Actualizar
+      </button>
+    </div>
+    @if (auth.isDemo()) {
+      <p class="demo-notice">
+        Estás en una demostración local. Los registros son de prueba y no se comparten con
+        producción.
+      </p>
+    }
+    @if (store.loading()) {
+      <p class="status-line" role="status">Consultando la sede…</p>
+    }
+    @if (store.error()) {
+      <div class="message error" role="alert">{{ store.error() }}</div>
+    }
+    @if (store.notice()) {
+      <div class="message success" role="status">{{ store.notice() }}</div>
+    }
+    @if (!store.loading() && !store.sites().length && !store.error()) {
+      <section class="empty-state">
+        <h2>Aún no tienes una sede asignada</h2>
+        <p>
+          Solicita a la persona que administra tu organización que habilite tu acceso a una sede.
+        </p>
+      </section>
+    }
+    @if (store.site()) {
+      <section class="main-section" [attr.aria-busy]="store.loading()">
+        @if (activeTab() === 'pending') {
+          <div class="section-heading">
+            <div>
+              <h2>Inspecciones pendientes</h2>
+              <p>Revisiones con vencimiento hasta la fecha elegida.</p>
+            </div>
+            <div class="inline-field">
+              <label for="due-through">Vencimiento hasta</label
+              ><input
+                id="due-through"
+                type="date"
+                [value]="store.dueThrough()"
+                (change)="changeDueThrough($event)"
+                [disabled]="store.loading() || store.saving()"
+              />
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <caption class="visually-hidden">
+                Inspecciones pendientes de
+                {{
+                  store.site()?.name
+                }}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Equipo</th>
+                  <th scope="col">Vencimiento</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (inspection of store.pending(); track inspection.id) {
+                  <tr>
+                    <th scope="row">
+                      {{ assetName(inspection.assetId) }}
+                    </th>
+                    <td>
+                      <time [attr.datetime]="inspection.dueDate">{{
+                        localDate(inspection.dueDate)
+                      }}</time>
+                    </td>
+                    <td><span class="status-tag pending">Pendiente</span></td>
+                    <td>
+                      <button
+                        class="text-link"
+                        (click)="startCompletion(inspection)"
+                        [disabled]="store.saving()"
+                      >
+                        Registrar resultado <span aria-hidden="true">→</span>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty-cell">
+                      {{
+                        store.loading()
+                          ? 'Cargando inspecciones…'
+                          : 'No hay inspecciones pendientes hasta esta fecha.'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (store.pendingNextToken()) {
+            <button
+              class="button secondary small load-more"
+              (click)="store.refresh(false, true)"
+              [disabled]="store.loading()"
+            >
+              Cargar más pendientes
+            </button>
+          }
+        }
+        @if (activeTab() === 'assets') {
+          <div class="section-heading">
+            <div>
+              <h2>Equipos de la sede</h2>
+              <p>Inventario y estado operativo de tus equipos.</p>
+            </div>
+            @if (store.site()?.role === 'coordinator') {
+              <button class="button primary small" (click)="showAssetForm.set(!showAssetForm())">
+                {{ showAssetForm() ? 'Cerrar formulario' : '+ Registrar equipo' }}
+              </button>
+            }
+          </div>
+          @if (showAssetForm() && store.site()?.role === 'coordinator') {
+            <form class="inline-form" (submit)="createAsset($event)">
+              <h3>Registrar equipo</h3>
+              <div class="form-row">
+                <div class="field">
+                  <label for="asset-name">Nombre del equipo</label
+                  ><input
+                    id="asset-name"
+                    [formField]="assetForm.name"
+                    placeholder="Ej. Cámara fría 01"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="field">
+                  <label for="asset-type">Tipo</label
+                  ><input
+                    id="asset-type"
+                    [formField]="assetForm.type"
+                    placeholder="Ej. Refrigeración"
+                  />
+                </div>
+                <div class="field">
+                  <label for="asset-status">Estado operativo</label
+                  ><select id="asset-status" [formField]="assetForm.status">
+                    <option value="operational">Operativo</option>
+                    <option value="out_of_service">Fuera de servicio</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                class="button primary small"
+                type="submit"
+                [disabled]="store.saving() || assetForm().invalid()"
+              >
+                {{ store.saving() ? 'Guardando…' : 'Guardar equipo' }}
+              </button>
+            </form>
+          }
+          <div class="table-scroll">
+            <table>
+              <caption class="visually-hidden">
+                Inventario de
+                {{
+                  store.site()?.name
+                }}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Equipo</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="visually-hidden">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (asset of store.assets(); track asset.id) {
+                  <tr>
+                    <th scope="row">{{ asset.name }}</th>
+                    <td>{{ asset.type }}</td>
+                    <td>
+                      <span
+                        class="status-tag"
+                        [class.warning]="asset.status === 'out_of_service'"
+                        >{{
+                          asset.status === 'operational' ? 'Operativo' : 'Fuera de servicio'
+                        }}</span
+                      >
+                    </td>
+                    <td>
+                      <button class="text-link" (click)="viewHistory(asset.id)">
+                        Ver historial <span aria-hidden="true">→</span>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="empty-cell">
+                      {{
+                        store.loading() ? 'Cargando equipos…' : 'Aún no hay equipos en esta sede.'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (store.assetsNextToken()) {
+            <button
+              class="button secondary small load-more"
+              (click)="store.refresh(true, false)"
+              [disabled]="store.loading()"
+            >
+              Cargar más equipos
+            </button>
+          }
+        }
+        @if (activeTab() === 'history') {
+          <div class="section-heading">
+            <div>
+              <h2>Historial de inspecciones</h2>
+              <p>Programación y resultados conservados en el registro del equipo.</p>
+            </div>
+            <div class="inline-field">
+              <label for="history-asset">Equipo</label
+              ><select
+                id="history-asset"
+                [value]="store.historyAssetId()"
+                (change)="changeHistoryAsset($event)"
+                [disabled]="store.historyLoading()"
+              >
+                <option value="" disabled>Selecciona un equipo</option>
+                @for (asset of store.assets(); track asset.id) {
+                  <option [value]="asset.id">{{ asset.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          @if (store.historyLoading()) {
+            <p role="status" class="status-line">Consultando el historial persistido…</p>
+          }
+          @if (store.historyAssetId()) {
+            <div class="history-tools">
+              <span>{{ assetName(store.historyAssetId()) }}</span><button
+                class="text-link"
+                (click)="store.loadHistory(store.historyAssetId())"
+                [disabled]="store.historyLoading()"
+              >
+                Volver a consultar <span aria-hidden="true">↻</span>
+              </button>
+            </div>
+          }
+          <ol class="history-list">
+            @for (inspection of store.history(); track inspection.id) {
+              <li>
+                <div class="history-date">
+                  <time [attr.datetime]="inspection.dueDate">{{
+                    localDate(inspection.dueDate)
+                  }}</time><span
+                    class="status-tag"
+                    [class.pending]="inspection.status === 'pending'"
+                    >{{ inspection.status === 'completed' ? 'Completada' : 'Programada' }}</span
+                  >
+                </div>
+                <div class="history-detail">
+                  @if (inspection.status === 'completed') {
+                    <h3>{{ resultLabel(inspection.result) }}</h3>
+                    <p class="inspection-note">{{ inspection.note }}</p>
+                    <p class="record-meta">
+                      Registró: {{ inspection.completedBy }} ·
+                      <time [attr.datetime]="inspection.completedAt"
+                        >{{ inspection.completedAt | date: 'dd/MM/yyyy, HH:mm' : 'UTC' }} UTC</time
+                      >
+                    </p>
+                  } @else {
+                    <h3>Revisión pendiente</h3>
+                    <p>El resultado aparecerá aquí al completar la inspección.</p>
+                  }
+                </div>
+              </li>
+            } @empty {
+              <li class="empty-cell">
+                {{
+                  store.historyAssetId()
+                    ? 'No hay inspecciones registradas para este equipo.'
+                    : 'Selecciona un equipo para consultar su historial.'
+                }}
+              </li>
+            }
+          </ol>
+          @if (store.historyNextToken()) {
+            <button
+              class="button secondary small load-more"
+              (click)="store.loadHistory(store.historyAssetId(), true)"
+              [disabled]="store.historyLoading()"
+            >
+              Cargar más historial
+            </button>
+          }
+        }
+      </section>
+      @if (closing(); as inspection) {
+        <section class="completion-section" aria-labelledby="completion-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">REGISTRAR RESULTADO</p>
+              <h2 id="completion-title">{{ assetName(inspection.assetId) }}</h2>
+              <p>
+                Inspección del {{ localDate(inspection.dueDate) }}. El servidor registra autor y
+                hora.
+              </p>
+            </div>
+            <button class="text-link" (click)="closing.set(undefined)" [disabled]="store.saving()">
+              Cancelar
+            </button>
+          </div>
+          <form (submit)="complete($event)">
+            <div class="form-row">
+              <div class="field">
+                <label for="completion-result">Resultado</label
+                ><select id="completion-result" [formField]="completionForm.result">
+                  <option value="ok">En orden</option>
+                  <option value="attention">Requiere atención</option>
+                  <option value="failed">Falla detectada</option>
+                </select>
+              </div>
+              <div class="field wide">
+                <label for="completion-note">Nota de la revisión</label
+                ><textarea
+                  id="completion-note"
+                  [formField]="completionForm.note"
+                  rows="3"
+                  placeholder="Describe lo que revisaste y lo que encontraste."
+                  aria-describedby="completion-help"
+                ></textarea
+                ><small id="completion-help"
+                  >Hasta 2000 caracteres. El cierre conserva esta nota como evidencia.</small
+                >
+              </div>
+            </div>
+            <button
+              class="button primary"
+              type="submit"
+              [disabled]="store.saving() || completionForm().invalid()"
+            >
+              {{ store.saving() ? 'Registrando…' : 'Completar inspección' }}
+            </button>
+          </form>
+        </section>
+      }
+      @if (store.site()?.role === 'coordinator') {
+        <section class="schedule-section" aria-labelledby="schedule-title">
+          <div>
+            <p class="eyebrow">PRÓXIMA REVISIÓN</p>
+            <h2 id="schedule-title">Programar una inspección</h2>
+            <p>Usa la fecha local de {{ store.site()?.name }}.</p>
+          </div>
+          <form class="schedule-form" (submit)="schedule($event)">
+            <div class="field">
+              <label for="schedule-asset">Equipo</label
+              ><select id="schedule-asset" [formField]="scheduleForm.assetId">
+                <option value="" disabled>Selecciona un equipo</option>
+                @for (asset of store.assets(); track asset.id) {
+                  <option [value]="asset.id">{{ asset.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label for="schedule-date">Fecha de vencimiento</label
+              ><input id="schedule-date" type="date" [formField]="scheduleForm.dueDate" />
+            </div>
+            <button
+              type="submit"
+              class="button secondary small"
+              [disabled]="store.saving() || scheduleForm().invalid()"
+            >
+              {{ store.saving() ? 'Guardando…' : 'Programar' }}
+            </button>
+          </form>
+        </section>
+      }
+    }
+    <footer class="workspace-footer">SedePulso · Mantenimiento preventivo por sede</footer>
+  </div>
+</main>

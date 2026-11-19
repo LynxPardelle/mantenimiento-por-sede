@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SedePulso - microservicio de inspecciones
+Parameters:
+  Environment: {Type: String, AllowedValues: [development, testing, production]}
+  ApiId: {Type: String}
+  AuthorizerId: {Type: String}
+  AccessFunctionName: {Type: String}
+  AccessFunctionArn: {Type: String}
+  AssetsFunctionName: {Type: String}
+  AssetsFunctionArn: {Type: String}
+Resources:
+  InspectionsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - {AttributeName: pk, AttributeType: S}
+        - {AttributeName: sk, AttributeType: S}
+        - {AttributeName: pendingSiteKey, AttributeType: S}
+        - {AttributeName: pendingDueKey, AttributeType: S}
+      KeySchema: [{AttributeName: pk, KeyType: HASH}, {AttributeName: sk, KeyType: RANGE}]
+      GlobalSecondaryIndexes:
+        - IndexName: PendingBySite
+          KeySchema: [{AttributeName: pendingSiteKey, KeyType: HASH}, {AttributeName: pendingDueKey, KeyType: RANGE}]
+          Projection: {ProjectionType: ALL}
+      PointInTimeRecoverySpecification: {PointInTimeRecoveryEnabled: true}
+      SSESpecification: {SSEEnabled: true}
+      TimeToLiveSpecification: {AttributeName: expiresAt, Enabled: true}
+  InspectionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../.artifacts/domain/
+      Handler: inspections.handler
+      Runtime: nodejs24.x
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 20
+      Environment:
+        Variables:
+          INSPECTIONS_TABLE_NAME: !Ref InspectionsTable
+          ACCESS_FUNCTION_NAME: !Ref AccessFunctionName
+          ASSETS_FUNCTION_NAME: !Ref AssetsFunctionName
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [dynamodb:GetItem, dynamodb:Query, dynamodb:PutItem, dynamodb:UpdateItem]
+              Resource:
+                - !GetAtt InspectionsTable.Arn
+                - !Sub '${InspectionsTable.Arn}/index/PendingBySite'
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: [!Ref AccessFunctionArn, !Ref AssetsFunctionArn]
+      Tags: {Product: sedepulso, Environment: !Ref Environment}
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: {ApiId: !Ref ApiId, IntegrationType: AWS_PROXY, IntegrationUri: !GetAtt InspectionsFunction.Arn, PayloadFormatVersion: '2.0'}
+  PendingRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'GET /api/v1/sites/{siteId}/inspections'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  HistoryRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'GET /api/v1/sites/{siteId}/assets/{assetId}/inspections'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  ScheduleRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'POST /api/v1/sites/{siteId}/assets/{assetId}/inspections'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  CompleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'PUT /api/v1/sites/{siteId}/assets/{assetId}/inspections/{inspectionId}/completion'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+
+  ApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref InspectionsFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/*/api/v1/sites/*'
+  InspectionsFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${InspectionsFunction}'
+      RetentionInDays: 14
+  InspectionsFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en InspectionsFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref InspectionsFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+Outputs:
+  InspectionsFunctionName: {Value: !Ref InspectionsFunction}
+  InspectionsFunctionArn: {Value: !GetAtt InspectionsFunction.Arn}
+  InspectionsTableName: {Value: !Ref InspectionsTable}

@@ -1,0 +1,62 @@
+name: SedePulso - verificar y publicar
+
+on:
+  pull_request:
+  push:
+    branches: [development, testing, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            infra/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm --prefix frontend ci
+      - run: npm --prefix infra ci
+      - run: npm --prefix infra test
+      - run: npm --prefix frontend test -- --watch=false
+      - run: npm --prefix frontend run build
+      - run: python -m pip install cfn-lint==1.60.1
+      - run: cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/frontend.yaml
+
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      id-token: write
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    concurrency:
+      group: sedepulso-${{ github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+      - run: npm --prefix frontend ci && npm --prefix infra ci
+      - run: npm --prefix frontend run build
+      - run: node infra/tools/package.mjs
+      - run: node infra/tools/deploy.mjs --environment "$DEPLOY_ENV"
+        env:
+          DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
