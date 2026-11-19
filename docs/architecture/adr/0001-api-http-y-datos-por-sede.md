@@ -2,6 +2,7 @@
 
 - Estado: aceptada para la base local
 - Fecha: 2026-11-17
+- Evolución: la [ADR 0002](0002-microservicios-y-angular-ssr.md), del 2026-11-19, separa datos y stacks por servicio e incorpora Angular SSR en Lambda. Esta ADR conserva el contexto histórico; la arquitectura vigente es la de SedePulso.
 
 ## Contexto
 

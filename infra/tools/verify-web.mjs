@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { aws, stackOutputs } from './aws.mjs';
+
+const args = process.argv.slice(2);
+const environment = args.includes('--environment') ? args[args.indexOf('--environment') + 1] : 'development';
+if (!['development', 'testing', 'production'].includes(environment)) throw new Error('Ambiente no válido.');
+const front = stackOutputs(`sedepulso-${environment}-frontend`);
+const response = await fetch(front.AppUrl, { signal: AbortSignal.timeout(30000) });
+assert.equal(response.status, 200, 'HTML público');
+const html = await response.text();
+assert.ok(html.includes('SedePulso'));
+assert.ok(html.includes('Crear cuenta'), 'CTA de registro presente en HTML SSR');
+const script = html.match(/<script[^>]+src="([^"]+\.js)"/);
+assert.ok(script, 'Entrada JavaScript presente');
+const asset = await fetch(new URL(script[1], front.AppUrl), { signal: AbortSignal.timeout(30000) });
+assert.equal(asset.status, 200);
+assert.match(asset.headers.get('content-type'), /javascript/);
+const configResponse = await fetch(`${front.AppUrl}/api/config`, { signal: AbortSignal.timeout(15000) });
+assert.equal(configResponse.status, 200);
+assert.match(configResponse.headers.get('cache-control'), /no-store/);
+const config = await configResponse.json();
+assert.equal(config.signupEnabled, true);
+assert.equal(config.billingEnabled, false);
+assert.equal(config.redirectUri, `${front.AppUrl}/auth/callback`);
+const functionUrl = aws(['lambda', 'get-function-url-config', '--region', 'us-east-1', '--function-name', front.SsrFunctionName]).FunctionUrl;
+assert.equal((await fetch(functionUrl, { signal: AbortSignal.timeout(15000) })).status, 403);
+assert.equal((await fetch(`https://${front.StaticBucketName}.s3.us-east-1.amazonaws.com/${script[1].replace(/^\//, '')}`, { signal: AbortSignal.timeout(15000) })).status, 403);
+const registration = await fetch(`${front.AppUrl}/registro`, { signal: AbortSignal.timeout(15000) });
+assert.equal(registration.status, 200);
+const parameters = new URLSearchParams({ client_id: config.clientId, response_type: 'code', redirect_uri: config.redirectUri, scope: 'openid email profile' });
+const hostedSignup = await fetch(`${config.authDomain}/signup?${parameters}`, { redirect: 'manual', signal: AbortSignal.timeout(15000) });
+assert.equal(hostedSignup.status, 302, 'El registro Hosted UI vuelve a la aplicación');
+assert.equal(hostedSignup.headers.get('location'), `${front.AppUrl}/registro`);
+for (const path of ['/login', '/forgotPassword']) {
+  assert.equal((await fetch(`${config.authDomain}${path}?${parameters}`, { signal: AbortSignal.timeout(15000) })).status, 200, `Cognito ${path} sigue disponible`);
+}
+const report = { product: 'SedePulso', environment, url: front.AppUrl, checkedAt: new Date().toISOString(), ssr: 200, staticAsset: 200, registration: 200, hostedSignup: 302, login: 200, passwordRecovery: 200, signupEnabled: true, billingEnabled: false, directLambda: 403, directS3: 403 };
+const out = join(dirname(fileURLToPath(import.meta.url)), '..', '.artifacts');
+await mkdir(out, { recursive: true });
+await writeFile(join(out, `web-${environment}.json`), JSON.stringify(report, null, 2) + '\n');
+console.log(JSON.stringify(report, null, 2));
