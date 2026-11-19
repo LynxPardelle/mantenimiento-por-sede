@@ -49,6 +49,10 @@ La verificación puede crear y eliminar identidades Cognito y datos efímeros en
 
 HTTP API V2 presenta una discrepancia entre el catálogo IAM y el proveedor real: `AWS::ApiGatewayV2::Stage` declara `apigateway:TagResource` para crear el stage y la primera creación de testing lo exigió literalmente, aun con los verbos GET/POST/PUT/PATCH/DELETE ya permitidos. Una API temporal sin rutas y una sesión STS limitada a su ARN confirmaron que añadir únicamente ese permiso permite CreateStage con tags; la API se eliminó al terminar. Cada rol CFN recibe una managed policy separada con sólo esa acción sobre `/apis/*/stages` y sus hijos, en us-east-1. Como el catálogo público y cfn-lint la consideran inválida, se omite W3037 exclusivamente en esos tres recursos IAM, sin ignorar lint global ni añadir `apigateway:*`. No se añade UntagResource sin un caso que lo requiera.
 
+Crear un stage con `AccessLogSettings` requiere además las acciones dependientes Create/Get/Update/Delete/ListLogDelivery, PutResourcePolicy y DescribeResourcePolicies de CloudWatch Logs. El catálogo AWS no admite ARN de recurso ni tags para esas operaciones V1: se enumeran con Resource `*` y condición `aws:RequestedRegion=us-east-1`. DescribeLogGroups ya se permite en esa región. Crear/borrar grupos continúa restringido al prefijo del ambiente; no se concede lectura global de eventos ni FilterLogEvents. Los roles runtime tampoco reciben configuración de delivery o resource policies.
+
+La segunda creación de testing demostró esa dependencia con AccessDenied en CreateLogDelivery. Una prueba STS con API HTTP, grupo y policy propios temporales confirmó creación completa de stage con destino de logging. Se retiraron API/stage, grupo y policy propios, y el hash de la policy compartida AWSLogDeliveryWrite20150319 permaneció idéntico antes/después. En producción los permisos sólo son usados por CloudFormation al gestionar los stacks autorizados; no se modifica manualmente ninguna policy compartida. `update-stage --access-log-settings '{}'` es un no-op, no un procedimiento para desactivar logging.
+
 El primer intento de testing quedó en ROLLBACK_COMPLETE antes de crear el pool. La tabla AccessTable recién creada se conservó por Retain, vacía y sin mutaciones; la metadata del stack fallido se puede retirar tras comprobar que no quedan otros recursos activos. Registrar esa tabla retenida para revisión posterior, sin borrarla como parte de la recuperación.
 
 ## Registro de Cognito
@@ -97,3 +101,5 @@ Crear los roles no prueba la federación completa. La evidencia de asunción OID
 - [AWS Cognito: respuestas y asociación WAF](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-waf.html).
 - [AWS: autorización de API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/security_iam_service-with-iam.html).
 - [CloudFormation cfn-lint: discrepancia del catálogo para tagging de API Gateway](https://github.com/aws-cloudformation/cfn-lint/issues/4280).
+- [AWS HTTP API: permisos dependientes para activar logging](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-logging.html).
+- [AWS CloudWatch Logs: acciones permission-only y alcance de recursos](https://docs.aws.amazon.com/service-authorization/latest/reference/list_logs.html).

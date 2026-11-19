@@ -111,6 +111,8 @@ export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPre
             statement('ReadOwnZone', ['route53:GetHostedZone', 'route53:ListResourceRecordSets'], `arn:aws:route53:::hostedzone/${hostedZoneId}`),
             statement('ReadDnsChange', 'route53:GetChange', 'arn:aws:route53:::change/*'),
             statement('OwnLogs', ['logs:CreateLogGroup', 'logs:DeleteLogGroup', 'logs:PutRetentionPolicy', 'logs:DeleteRetentionPolicy', 'logs:TagLogGroup', 'logs:UntagLogGroup', 'logs:TagResource', 'logs:UntagResource', 'logs:ListTagsLogGroup', 'logs:ListTagsForResource'], logs),
+            // HTTP API AccessLogSettings uses legacy log-delivery permissions without resource ARN support.
+            statement('EnableHttpApiLogDelivery', ['logs:CreateLogDelivery', 'logs:GetLogDelivery', 'logs:UpdateLogDelivery', 'logs:DeleteLogDelivery', 'logs:ListLogDeliveries', 'logs:PutResourcePolicy', 'logs:DescribeResourcePolicies'], '*', globalRegion),
             statement('DescribeLogGroups', 'logs:DescribeLogGroups', '*', globalRegion),
             statement('ErrorAlarms', ['cloudwatch:PutMetricAlarm', 'cloudwatch:DeleteAlarms', 'cloudwatch:DescribeAlarms', 'cloudwatch:TagResource', 'cloudwatch:UntagResource', 'cloudwatch:ListTagsForResource'], `arn:aws:cloudwatch:${region}:${account}:alarm:${prefix}*`),
             statement('ServerlessTransform', 'cloudformation:CreateChangeSet', transform),
