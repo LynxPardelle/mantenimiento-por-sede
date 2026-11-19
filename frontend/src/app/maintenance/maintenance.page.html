@@ -154,7 +154,7 @@
                       <button
                         class="text-link"
                         (click)="startCompletion(inspection)"
-                        [disabled]="store.saving()"
+                        [disabled]="store.loading() || store.saving()"
                       >
                         Registrar resultado <span aria-hidden="true">→</span>
                       </button>
@@ -178,7 +178,7 @@
             <button
               class="button secondary small load-more"
               (click)="store.refresh(false, true)"
-              [disabled]="store.loading()"
+              [disabled]="store.loading() || store.saving()"
             >
               Cargar más pendientes
             </button>
@@ -228,7 +228,7 @@
               <button
                 class="button primary small"
                 type="submit"
-                [disabled]="store.saving() || assetForm().invalid()"
+                [disabled]="store.loading() || store.saving() || assetForm().invalid()"
               >
                 {{ store.saving() ? 'Guardando…' : 'Guardar equipo' }}
               </button>
@@ -286,7 +286,7 @@
             <button
               class="button secondary small load-more"
               (click)="store.refresh(true, false)"
-              [disabled]="store.loading()"
+              [disabled]="store.loading() || store.saving()"
             >
               Cargar más equipos
             </button>
@@ -418,7 +418,7 @@
             <button
               class="button primary"
               type="submit"
-              [disabled]="store.saving() || completionForm().invalid()"
+              [disabled]="store.loading() || store.saving() || completionForm().invalid()"
             >
               {{ store.saving() ? 'Registrando…' : 'Completar inspección' }}
             </button>
@@ -449,7 +449,7 @@
             <button
               type="submit"
               class="button secondary small"
-              [disabled]="store.saving() || scheduleForm().invalid()"
+              [disabled]="store.loading() || store.saving() || scheduleForm().invalid()"
             >
               {{ store.saving() ? 'Guardando…' : 'Programar' }}
             </button>
