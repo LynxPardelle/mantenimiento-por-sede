@@ -5,9 +5,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { aws, stackOutputs } from './aws.mjs';
 
-// Only disposable identities and data in the development environment.
+// Only disposable identities/data in a fresh smoke namespace; never tenant data.
+const args = process.argv.slice(2);
+const environment = args.includes('--environment') ? args[args.indexOf('--environment') + 1] : 'development';
+if (!['development', 'testing', 'production'].includes(environment)) throw new Error('Ambiente no válido.');
 const region = 'us-east-1';
-const prefix = 'sedepulso-development';
+const prefix = `sedepulso-${environment}`;
 const platform = stackOutputs(`${prefix}-platform`);
 const inventory = stackOutputs(`${prefix}-assets`);
 const maintenance = stackOutputs(`${prefix}-inspections`);
@@ -130,6 +133,6 @@ try {
   }
   if (cleanupErrors.length) throw new Error(`Falló limpieza de identidades/datos de prueba: ${cleanupErrors.join('; ')}`);
 }
-const report = { product: 'SedePulso', environment: 'development', url: base, checkedAt: new Date().toISOString(), checks, disposableIdentitiesDeleted: users.length };
-await writeFile(join(dirname(fileURLToPath(import.meta.url)), '..', '.artifacts', 'smoke-development.json'), JSON.stringify(report, null, 2) + '\n');
+const report = { product: 'SedePulso', environment, url: base, checkedAt: new Date().toISOString(), checks, disposableIdentitiesDeleted: users.length };
+await writeFile(join(dirname(fileURLToPath(import.meta.url)), '..', '.artifacts', `smoke-${environment}.json`), JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));

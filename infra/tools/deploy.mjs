@@ -26,7 +26,7 @@ if (environment !== 'development') {
 // Uploaded packages and templates must still be the bytes recorded at packaging time.
 for (let offset = 0; offset < manifest.files.length; offset += 32) {
 await Promise.all(manifest.files.slice(offset, offset + 32).map(async (file) => {
-  const staged = /^(domain|frontend|health|config)\//.test(file.path);
+  const staged = /^(domain|onboarding|frontend|health|config)\//.test(file.path);
   const root = staged ? join(infra, '.artifacts') : infra;
   const path = resolve(root, file.path);
   if (!path.startsWith(root + (process.platform === 'win32' ? '\\' : '/'))) throw new Error('Ruta de manifiesto fuera del paquete.');
@@ -58,7 +58,7 @@ async function deploy(service, template, parameters) {
   aws(['s3', 'cp', packaged, `s3://${bucket}/${environment}/${manifest.release}/${service}/template.yaml`, '--only-show-errors'], { json: false });
   aws(['s3', 'cp', join(infra, '.artifacts', 'manifest.json'), `s3://${bucket}/${environment}/${manifest.release}/manifest.json`, '--only-show-errors'], { json: false });
   console.log(`Publicando ${name}...`);
-  aws(['cloudformation', 'deploy', '--region', region, '--stack-name', name, '--template-file', packaged, '--capabilities', 'CAPABILITY_IAM', 'CAPABILITY_AUTO_EXPAND', '--no-fail-on-empty-changeset', '--tags', 'Product=sedepulso', `Environment=${environment}`, '--parameter-overrides', ...Object.entries(parameters).map(([key, value]) => `${key}=${value}`)], { json: false, quiet: false });
+  aws(['cloudformation', 'deploy', '--region', region, '--stack-name', name, '--template-file', packaged, '--capabilities', 'CAPABILITY_IAM', 'CAPABILITY_AUTO_EXPAND', '--no-fail-on-empty-changeset', ...(process.env.CLOUDFORMATION_ROLE_ARN ? ['--role-arn', process.env.CLOUDFORMATION_ROLE_ARN] : []), '--tags', 'Product=sedepulso', `Environment=${environment}`, '--parameter-overrides', ...Object.entries(parameters).map(([key, value]) => `${key}=${value}`)], { json: false, quiet: false });
   reports[service] = stackOutputs(name, region);
   return reports[service];
 }
@@ -67,7 +67,9 @@ async function selected(name, template, parameters) {
   reports[name] = stackOutputs(`${prefix}-${name}`, region);
   return reports[name];
 }
-const platform = await selected('platform', 'template.yaml', { Environment: environment, AppHost: host });
+const signupWebAclArn = process.env.SIGNUP_WEB_ACL_ARN || stackOutputs('sedepulso-ci-oidc', region).SignupWebAclArn;
+if (!signupWebAclArn) throw new Error('Configura la ACL de registro con node infra/tools/configure-ci.mjs.');
+const platform = await selected('platform', 'template.yaml', { Environment: environment, AppHost: host, SignupWebAclArn: signupWebAclArn });
 const shared = { Environment: environment, ApiId: platform.ApiId, AuthorizerId: platform.AuthorizerId, AccessFunctionName: platform.AccessFunctionName, AccessFunctionArn: platform.AccessFunctionArn };
 if (['all', 'assets', 'inspections'].includes(service)) {
 const assets = await selected('assets', 'services/assets.yaml', shared);

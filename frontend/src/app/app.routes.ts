@@ -8,6 +8,12 @@ export const routes: Routes = [
     title: 'SedePulso · Mantenimiento preventivo por sede',
   },
   {
+    path: 'registro',
+    loadComponent: () =>
+      import('./registration/registration.page').then((module) => module.RegistrationPage),
+    title: 'Crea tu cuenta · SedePulso',
+  },
+  {
     path: 'app',
     canActivate: [sessionGuard],
     loadComponent: () =>

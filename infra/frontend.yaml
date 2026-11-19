@@ -13,11 +13,13 @@ Resources:
       DomainName: !Ref AppHost
       ValidationMethod: DNS
       DomainValidationOptions: [{DomainName: !Ref AppHost, HostedZoneId: !Ref HostedZoneId}]
+      Tags: [{Key: Product, Value: sedepulso}, {Key: Environment, Value: !Ref Environment}]
   StaticBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
+      Tags: [{Key: Product, Value: sedepulso}, {Key: Environment, Value: !Ref Environment}]
       PublicAccessBlockConfiguration: {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}
       BucketEncryption:
         ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {SSEAlgorithm: AES256}}]
@@ -30,6 +32,7 @@ Resources:
       CodeUri: .artifacts/frontend/
       Handler: index.handler
       Runtime: nodejs24.x
+      PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/sedepulso-${Environment}-runtime-boundary'
       Architectures: [arm64]
       MemorySize: 512
       Timeout: 20
@@ -97,6 +100,7 @@ Resources:
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
+      Tags: [{Key: Product, Value: sedepulso}, {Key: Environment, Value: !Ref Environment}]
       DistributionConfig:
         Enabled: true
         IPV6Enabled: true

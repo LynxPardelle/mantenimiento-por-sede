@@ -13,7 +13,7 @@ if (!backendOnly) await stat(join(built, 'server', 'server.mjs'));
 await stat(join(infra, 'functions', 'domain', 'dynamodb.mjs'));
 await stat(join(infra, 'functions', 'domain', 'invoke.mjs'));
 await mkdir(out, { recursive: true });
-for (const name of backendOnly ? ['domain', 'health', 'config'] : ['domain', 'health', 'config', 'frontend', 'browser']) {
+for (const name of backendOnly ? ['domain', 'onboarding', 'health', 'config'] : ['domain', 'onboarding', 'health', 'config', 'frontend', 'browser']) {
   const target = resolve(out, name);
   if (dirname(target) !== out) throw new Error('Destino de empaquetado fuera de .artifacts.');
   await rm(target, { recursive: true, force: true });
@@ -22,6 +22,9 @@ for (const name of backendOnly ? ['domain', 'health', 'config'] : ['domain', 'he
 await cp(join(infra, 'functions', 'domain'), join(out, 'domain'), { recursive: true });
 await cp(join(infra, 'node_modules'), join(out, 'domain', 'node_modules'), { recursive: true });
 await writeFile(join(out, 'domain', 'package.json'), '{"type":"module"}\n');
+await cp(join(infra, 'functions', 'onboarding'), join(out, 'onboarding'), { recursive: true });
+await cp(join(infra, 'node_modules'), join(out, 'onboarding', 'node_modules'), { recursive: true });
+await writeFile(join(out, 'onboarding', 'package.json'), '{"type":"module"}\n');
 for (const name of ['health', 'config']) await cp(join(infra, 'functions', name), join(out, name), { recursive: true });
 if (!backendOnly) {
 await cp(join(built, 'server'), join(out, 'frontend', 'server'), { recursive: true });
@@ -42,6 +45,7 @@ async function hashDirectory(root, relative = '', prefix = '') {
 }
 if (!backendOnly) await hashDirectory(join(out, 'frontend'), '', 'frontend');
 await hashDirectory(join(out, 'domain'), '', 'domain');
+await hashDirectory(join(out, 'onboarding'), '', 'onboarding');
 for (const name of ['health', 'config']) await hashDirectory(join(out, name), '', name);
 for (const template of ['template.yaml', 'services/assets.yaml', 'services/inspections.yaml', 'frontend.yaml']) {
   files.push({ path: template, sha256: createHash('sha256').update(await readFile(join(infra, template))).digest('hex') });

@@ -27,6 +27,7 @@ Resources:
       CodeUri: ../.artifacts/domain/
       Handler: assets.handler
       Runtime: nodejs24.x
+      PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/sedepulso-${Environment}-runtime-boundary'
       Architectures: [arm64]
       MemorySize: 256
       Timeout: 20

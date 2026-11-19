@@ -12,6 +12,7 @@ export interface RuntimeConfig {
   authDomain?: string;
   redirectUri?: string;
   logoutUri?: string;
+  signupEnabled?: boolean;
 }
 interface Session {
   accessToken: string;

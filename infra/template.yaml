@@ -8,12 +8,16 @@ Parameters:
   AppHost:
     Type: String
     AllowedPattern: '^sedepulso(-development|-testing)?\.lynxpardelle\.com$'
+  SignupWebAclArn:
+    Type: String
+    Description: ACL regional de SedePulso que dirige el registro Hosted UI a la aplicación.
 Globals:
   Function:
     Runtime: nodejs24.x
     Architectures: [arm64]
     MemorySize: 256
     Timeout: 10
+    PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/sedepulso-${Environment}-runtime-boundary'
     LoggingConfig: {LogFormat: JSON}
     Tags: {Product: sedepulso, Environment: !Ref Environment}
 Resources:
@@ -41,19 +45,49 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       UserPoolName: !Sub 'sedepulso-${Environment}'
-      AdminCreateUserConfig: {AllowAdminCreateUserOnly: true}
+      AdminCreateUserConfig: {AllowAdminCreateUserOnly: false}
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpFunction.Arn
+        PostConfirmation: !GetAtt PostConfirmationFunction.Arn
+      Schema:
+        - Name: organizationName
+          AttributeDataType: String
+          Mutable: false
+          Required: false
+          StringAttributeConstraints: {MinLength: '1', MaxLength: '120'}
+        - Name: siteName
+          AttributeDataType: String
+          Mutable: false
+          Required: false
+          StringAttributeConstraints: {MinLength: '1', MaxLength: '120'}
+        - Name: timeZone
+          AttributeDataType: String
+          Mutable: false
+          Required: false
+          StringAttributeConstraints: {MinLength: '1', MaxLength: '100'}
       UsernameAttributes: [email]
       UsernameConfiguration: {CaseSensitive: false}
       AutoVerifiedAttributes: [email]
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: 'Confirma tu correo de SedePulso'
+        EmailMessage: 'Tu código de confirmación de SedePulso es {####}. Escríbelo en la pantalla de registro que abriste. Si no solicitaste esta cuenta, ignora este mensaje.'
       Policies:
         PasswordPolicy: {MinimumLength: 14, RequireLowercase: true, RequireUppercase: true, RequireNumbers: true, RequireSymbols: true}
       UserPoolTags: {Product: sedepulso, Environment: !Ref Environment}
+  SignupWebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !GetAtt UserPool.Arn
+      WebACLArn: !Ref SignupWebAclArn
   AppClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref UserPool
       ClientName: !Sub 'sedepulso-${Environment}-web'
       GenerateSecret: false
+      ReadAttributes: [email, email_verified, 'custom:organizationName', 'custom:siteName', 'custom:timeZone']
+      WriteAttributes: [email, 'custom:organizationName', 'custom:siteName', 'custom:timeZone']
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows: [code]
       AllowedOAuthScopes: [openid, email, profile]
@@ -92,6 +126,39 @@ Resources:
       KeySchema: [{AttributeName: pk, KeyType: HASH}, {AttributeName: sk, KeyType: RANGE}]
       PointInTimeRecoverySpecification: {PointInTimeRecoveryEnabled: true}
       SSESpecification: {SSEEnabled: true}
+  PreSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .artifacts/onboarding/
+      Handler: index.preSignUp
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .artifacts/onboarding/
+      Handler: index.postConfirmation
+      Environment:
+        Variables: {ACCESS_TABLE_NAME: !Ref AccessTable}
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [dynamodb:GetItem, dynamodb:PutItem]
+              Resource: !GetAtt AccessTable.Arn
+  PreSignUpPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PreSignUpFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt UserPool.Arn
+  PostConfirmationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PostConfirmationFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt UserPool.Arn
   HealthFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -108,6 +175,7 @@ Resources:
           CLIENT_ID: !Ref AppClient
           AUTH_DOMAIN: !Sub 'https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
           APP_HOST: !Ref AppHost
+          SIGNUP_ENABLED: 'true'
   HealthIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties: {ApiId: !Ref HttpApi, IntegrationType: AWS_PROXY, IntegrationUri: !GetAtt HealthFunction.Arn, PayloadFormatVersion: '2.0'}
@@ -224,7 +292,45 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+  PreSignUpFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${PreSignUpFunction}'
+      RetentionInDays: 14
+  PreSignUpFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en PreSignUpFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref PreSignUpFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  PostConfirmationFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${PostConfirmationFunction}'
+      RetentionInDays: 14
+  PostConfirmationFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en PostConfirmationFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref PostConfirmationFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 Outputs:
+  PreSignUpFunctionName: {Value: !Ref PreSignUpFunction}
+  PostConfirmationFunctionName: {Value: !Ref PostConfirmationFunction}
   ApiId: {Value: !Ref HttpApi}
   ApiOrigin: {Value: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'}
   ApiUrl: {Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'}
