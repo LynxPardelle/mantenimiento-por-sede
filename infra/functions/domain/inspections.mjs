@@ -25,7 +25,7 @@ export function createInspectionsHandler({ repository, authorize, getAsset, now 
     if (!inspectionId && method === 'POST') {
       const body = jsonBody(event, ['dueDate']);
       const normalized = { dueDate: dateOnly(body.dueDate) };
-      const item = await repository.createInspection({ scope, actor: identity.sub, operation: `schedule#${assetId}`, key: idempotencyKey(event), fingerprint: digest(normalized), item: { id: idGenerator(), assetId, ...normalized, status: 'pending' } });
+      const item = await repository.createInspection({ scope, actor: identity.sub, operation: `schedule#${assetId}`, key: idempotencyKey(event), fingerprint: digest(normalized), item: { id: idGenerator(), assetId, ...normalized, status: 'pending', createdAt: now().toISOString() } });
       return response(201, item);
     }
     if (inspectionId && method === 'PUT') {

@@ -33,6 +33,8 @@ La organización creada por el servidor contiene `plan=pilot` y `status=active`.
 
 La decisión de precio debe documentar a quién se entrevistó, qué oferta vio y qué aceptó. No se usarán visitas a la landing o cuentas de prueba como aceptación comercial.
 
+El observador privado de TASK-006 aporta conteos y razones para evaluar el piloto; sus informes administrativos no constituyen todavía una pantalla de analítica para clientes ni una prestación contratada de Operación o Red. El ahorro de tiempo, esfuerzo de soporte, uso por persona y coste atribuible siguen pendientes de medición; no se fijarán cuotas o precios a partir del consumo de lectura del recolector.
+
 ## Preparación para pagos posteriores
 
 1. Confirmar alcance, límites y precio de Operación con el piloto.
