@@ -34,7 +34,7 @@ export function addPilotResources(template, { account, region, providerArn, subj
           Condition: { StringEquals: { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com', 'token.actions.githubusercontent.com:sub': `${subjectPrefix}:environment:${env}` } },
         }]),
         Policies: [{ PolicyName: 'ObservePilotOnly', PolicyDocument: document([
-          allow('DiscoverOwnStackOutputs', ['cloudformation:DescribeStacks'], ['platform', 'assets', 'inspections', 'frontend'].map(name => `arn:aws:cloudformation:${region}:${account}:stack/sedepulso-${env}-${name}/*`)),
+          allow('DiscoverOwnStackOutputs', ['cloudformation:DescribeStacks', 'cloudformation:ListStackResources'], ['platform', 'assets', 'inspections', 'frontend'].map(name => `arn:aws:cloudformation:${region}:${account}:stack/sedepulso-${env}-${name}/*`)),
           allow('ReadEnrolledSiteData', ['dynamodb:Query'], [table + 'assets-*', table + 'inspections-*']),
           allow('ApproximateTableReadiness', ['dynamodb:DescribeTable'], ['platform-*', 'assets-*', 'inspections-*'].map(name => table + name)),
           allow('ObserveAlarms', ['cloudwatch:DescribeAlarms'], `arn:aws:cloudwatch:${region}:${account}:alarm:sedepulso-${env}-*`),

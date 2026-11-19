@@ -24,8 +24,10 @@ export async function observePilot({ aws, describeStack, readJson, putJson, fetc
     if (Table?.TableStatus !== 'ACTIVE' || !Number.isInteger(Table.ItemCount) || Table.ItemCount < 0) throw new Error('pilot_table_not_ready');
     tableMetadata[domain] = { approximateItems: Table.ItemCount, caveat: 'DynamoDB metadata updated approximately every six hours; includes unclassified and technical records, not participants or active users.' };
   }
-  const alarms = aws(['cloudwatch', 'describe-alarms', '--alarm-name-prefix', `sedepulso-${environment}-`, '--region', 'us-east-1']);
-  if (alarms.NextToken || !Array.isArray(alarms.MetricAlarms) || !alarms.MetricAlarms.length) throw new Error('pilot_alarms_incomplete');
+  const alarmNames = Object.values(stacks).flatMap(stack => stack.alarmNames || []);
+  if (!alarmNames.length || alarmNames.length > 100 || new Set(alarmNames).size !== alarmNames.length || alarmNames.some(name => typeof name !== 'string' || !name.startsWith(`sedepulso-${environment}-`))) throw new Error('pilot_alarms_incomplete');
+  const alarms = aws(['cloudwatch', 'describe-alarms', '--alarm-names', ...alarmNames, '--region', 'us-east-1']);
+  if (alarms.NextToken || !Array.isArray(alarms.MetricAlarms) || alarms.MetricAlarms.length !== alarmNames.length || new Set(alarms.MetricAlarms.map(a => a.AlarmName)).size !== alarmNames.length || alarms.MetricAlarms.some(a => !alarmNames.includes(a.AlarmName))) throw new Error('pilot_alarms_incomplete');
   const alarmStates = { OK: 0, ALARM: 0, INSUFFICIENT_DATA: 0 };
   for (const alarm of alarms.MetricAlarms) {
     if (!(alarm.StateValue in alarmStates)) throw new Error('pilot_alarm_state_invalid');

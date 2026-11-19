@@ -122,6 +122,10 @@ Cada ambiente tiene un rol OIDC operacional separado, `sedepulso-pilot-<ambiente
 
 El observador recibe consultas `dynamodb:Query` sobre tablas Assets e Inspections propias del ambiente y `DescribeTable` para Access, Assets e Inspections. Descubre outputs de los cuatro stacks propios, observa alarmas en la región y lee el registro/reportes del prefijo propio. Sólo puede escribir reportes cifrados en su prefijo; no puede actualizar el registro ni borrar objetos.
 
+La lectura de alarmas está limitada al ARN `alarm:sedepulso-<ambiente>-*`; no incluye alarmas compuestas. El catálogo [IAM de CloudWatch](https://docs.aws.amazon.com/service-authorization/latest/reference/list_cloudwatch.html) permite ese alcance para alarmas métricas.
+
+El observador descubre los nombres físicos con `ListStackResources` en los cuatro stacks propios y solicita `DescribeAlarms --alarm-names` con esos nombres exactos. La consulta por `--alarm-name-prefix` exige `alarm:*` en la autorización real; una prueba STS reprodujo el rechazo y comprobó que los nueve nombres explícitos funcionan con el ARN acotado. No ampliar el permiso global para resolver ese caso. Si falta una alarma solicitada, el reporte falla como incompleto.
+
 No recibe `Scan`, escrituras DynamoDB, acceso a usuarios Cognito, Stripe ni despliegues. Las consultas seleccionan cohortes y sedes explícitas; el rol operacional conserva alcance sobre ambas tablas del ambiente y el límite por cohorte lo aplica el colector. No presentar esto como aislamiento IAM por participante.
 
 Las Lambdas del producto mantienen sus roles y sus límites por servicio. El observador administrativo no introduce lecturas entre tablas en el runtime de Access, Assets o Inspections.
@@ -146,6 +150,8 @@ Los equipos y programaciones nuevos incorporan `createdAt` UTC del servidor. El 
 Las consultas son consistentes individualmente pero no una instantánea atómica entre tablas; el reporte registra inicio y fin de lectura. Un cierre concurrente o un dato legacy puede limitar la reconstrucción, incluso en la primera observación posterior al límite. La presencia de `createdAt` no acredita un historial de todas las modificaciones posibles.
 
 `operations.tableMetadata.*.approximateItems` procede de `DescribeTable`: DynamoDB actualiza esa metadata aproximadamente cada seis horas. **No es un conteo de clientes, personas activas, equipos o inspecciones:** puede incluir membresías, metadatos, idempotencia y pruebas no clasificadas. No compararlo como si fuera el Scan consistente de la línea base.
+
+Referencias operativas: [actualización aproximada de ItemCount en DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TableDescription.html) y [límites de los eventos programados de GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
 `collectorReadCapacityUnits` mide capacidad de lectura consumida por el colector; no es el coste AWS total. Costes, esfuerzo humano, consultas de historial, utilidad de notas y aceptación comercial permanecen en `unmeasured` hasta incorporar evidencia privada con el método acordado en [piloto operativo](../producto/piloto-operativo.md).
 
