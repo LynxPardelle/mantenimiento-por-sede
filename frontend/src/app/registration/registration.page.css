@@ -1,0 +1,119 @@
+:host {
+  display: block;
+}
+.registration-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(3rem, 8vw, 9rem);
+  max-width: 78rem;
+  margin: auto;
+  padding: 4.5rem clamp(1.5rem, 5vw, 4rem) 5rem;
+}
+.registration-intro {
+  max-width: 31rem;
+  padding-top: 1rem;
+}
+.registration-intro h1 {
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+  font-weight: 500;
+  margin: 1.5rem 0;
+}
+.registration-intro em {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  color: var(--green);
+}
+.registration-intro > p:not(.eyebrow),
+.registration-intro li {
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.registration-intro ul {
+  padding: 1rem 0 1rem 1.2rem;
+  border-block: 1px solid var(--line);
+  margin: 1.8rem 0;
+}
+.registration-intro .registration-note {
+  font-size: 0.8rem;
+}
+.registration-panel {
+  border-top: 2px solid var(--green);
+  padding-top: 1.5rem;
+  min-width: 0;
+}
+.registration-panel h2 {
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+  font-weight: 550;
+  margin: 0.7rem 0;
+}
+.panel-description,
+.registration-panel > p:not(.eyebrow) {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.registration-panel .field {
+  margin: 1.1rem 0;
+}
+.registration-panel .field input,
+.registration-panel .field select {
+  font-size: 0.92rem;
+  min-height: 47px;
+}
+.registration-panel form > .button {
+  width: 100%;
+  margin-top: 0.8rem;
+}
+.registration-panel .registration-privacy {
+  font-size: 0.73rem;
+  line-height: 1.7;
+  margin: 1.4rem 0;
+}
+.confirmation-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+.registration-panel .message {
+  margin: 1.2rem 0;
+}
+.registration-panel > button.primary {
+  margin-top: 1rem;
+}
+@media (max-width: 800px) {
+  .registration-layout {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    padding-top: 2rem;
+  }
+  .registration-intro {
+    max-width: none;
+  }
+  .registration-intro h1 {
+    max-width: 35rem;
+  }
+  .registration-intro ul {
+    margin: 1rem 0;
+  }
+  .registration-panel {
+    max-width: 36rem;
+    width: 100%;
+  }
+}
+@media (max-width: 480px) {
+  .registration-intro h1 {
+    font-size: 2.65rem;
+  }
+  .registration-layout {
+    padding-inline: 1.25rem;
+  }
+  .registration-intro li {
+    font-size: 0.85rem;
+  }
+}

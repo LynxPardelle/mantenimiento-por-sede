@@ -1,63 +1,360 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Base local de Mantenimiento por Sede
-
+Description: SedePulso - plataforma, identidad y servicio de acceso
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [development, testing, production]
+  AppHost:
+    Type: String
+    AllowedPattern: '^sedepulso(-development|-testing)?\.lynxpardelle\.com$'
+  SignupWebAclArn:
+    Type: String
+    Default: ''
+    Description: ACL regional de SedePulso que dirige el registro Hosted UI a la aplicación.
+Conditions:
+  HasSignupWebAcl: !Not [!Equals [!Ref SignupWebAclArn, '']]
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Architectures: [arm64]
+    MemorySize: 256
+    Timeout: 10
+    PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/sedepulso-${Environment}-runtime-boundary'
+    LoggingConfig: {LogFormat: JSON}
+    Tags: {Product: sedepulso, Environment: !Ref Environment}
 Resources:
-  Api:
-    Type: AWS::Serverless::HttpApi
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
     Properties:
+      Name: !Sub 'sedepulso-${Environment}'
+      ProtocolType: HTTP
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
       StageName: '$default'
+      AutoDeploy: true
       AccessLogSettings:
         DestinationArn: !GetAtt ApiAccessLogs.Arn
         Format: '{"requestId":"$context.requestId","routeKey":"$context.routeKey","status":"$context.status","latency":"$context.responseLatency"}'
-
+      DefaultRouteSettings: {ThrottlingBurstLimit: 50, ThrottlingRateLimit: 25}
   ApiAccessLogs:
     Type: AWS::Logs::LogGroup
+    Properties: {RetentionInDays: 14}
+  ApiServerErrors:
+    Type: AWS::CloudWatch::Alarm
     Properties:
-      RetentionInDays: 14
-
-  HealthFunction:
-    Type: AWS::Serverless::Function
+      AlarmDescription: !Sub 'SedePulso ${Environment} - respuestas HTTP 5xx, incluidos errores manejados por los servicios'
+      Namespace: AWS/ApiGateway
+      MetricName: 5xx
+      Dimensions: [{Name: ApiId, Value: !Ref HttpApi}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      CodeUri: functions/health/
-      Handler: index.handler
-      Runtime: nodejs24.x
-      MemorySize: 128
-      Timeout: 3
-      Events:
-        Health:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref Api
-            Path: /api/health
-            Method: GET
-
-  MaintenanceTable:
+      UserPoolName: !Sub 'sedepulso-${Environment}'
+      AdminCreateUserConfig: {AllowAdminCreateUserOnly: false}
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpFunction.Arn
+        PostConfirmation: !GetAtt PostConfirmationFunction.Arn
+      Schema:
+        - Name: organizationName
+          AttributeDataType: String
+          Mutable: false
+          Required: false
+          StringAttributeConstraints: {MinLength: '1', MaxLength: '120'}
+        - Name: siteName
+          AttributeDataType: String
+          Mutable: false
+          Required: false
+          StringAttributeConstraints: {MinLength: '1', MaxLength: '120'}
+        - Name: timeZone
+          AttributeDataType: String
+          Mutable: false
+          Required: false
+          StringAttributeConstraints: {MinLength: '1', MaxLength: '100'}
+      UsernameAttributes: [email]
+      UsernameConfiguration: {CaseSensitive: false}
+      AutoVerifiedAttributes: [email]
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: 'Confirma tu correo de SedePulso'
+        EmailMessage: 'Tu código de confirmación de SedePulso es {####}. Escríbelo en la pantalla de registro que abriste. Si no solicitaste esta cuenta, ignora este mensaje.'
+      Policies:
+        PasswordPolicy: {MinimumLength: 14, RequireLowercase: true, RequireUppercase: true, RequireNumbers: true, RequireSymbols: true}
+      UserPoolTags: {Product: sedepulso, Environment: !Ref Environment}
+  SignupWebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Condition: HasSignupWebAcl
+    Properties:
+      ResourceArn: !GetAtt UserPool.Arn
+      WebACLArn: !Ref SignupWebAclArn
+  AppClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub 'sedepulso-${Environment}-web'
+      GenerateSecret: false
+      ReadAttributes: [email, email_verified, 'custom:organizationName', 'custom:siteName', 'custom:timeZone']
+      WriteAttributes: [email, 'custom:organizationName', 'custom:siteName', 'custom:timeZone']
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: [code]
+      AllowedOAuthScopes: [openid, email, profile]
+      SupportedIdentityProviders: [COGNITO]
+      CallbackURLs: [!Sub 'https://${AppHost}/auth/callback']
+      LogoutURLs: [!Sub 'https://${AppHost}/']
+      ExplicitAuthFlows: [ALLOW_REFRESH_TOKEN_AUTH, ALLOW_ADMIN_USER_PASSWORD_AUTH]
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+      AccessTokenValidity: 15
+      IdTokenValidity: 15
+      RefreshTokenValidity: 1
+      TokenValidityUnits: {AccessToken: minutes, IdToken: minutes, RefreshToken: days}
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'sedepulso-${Environment}-${AWS::AccountId}'
+      UserPoolId: !Ref UserPool
+  JwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref HttpApi
+      Name: CognitoAccessToken
+      AuthorizerType: JWT
+      IdentitySource: ['$request.header.Authorization']
+      JwtConfiguration:
+        Audience: [!Ref AppClient]
+        Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+  AccessTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
       BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - { AttributeName: pk, AttributeType: S }
-        - { AttributeName: sk, AttributeType: S }
-        - { AttributeName: pendingSiteKey, AttributeType: S }
-        - { AttributeName: pendingDueKey, AttributeType: S }
-      KeySchema:
-        - { AttributeName: pk, KeyType: HASH }
-        - { AttributeName: sk, KeyType: RANGE }
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      GlobalSecondaryIndexes:
-        - IndexName: PendingBySite
-          KeySchema:
-            - { AttributeName: pendingSiteKey, KeyType: HASH }
-            - { AttributeName: pendingDueKey, KeyType: RANGE }
-          Projection:
-            ProjectionType: INCLUDE
-            NonKeyAttributes: [assetId, inspectionId, dueDate, status]
-
+      AttributeDefinitions: [{AttributeName: pk, AttributeType: S}, {AttributeName: sk, AttributeType: S}]
+      KeySchema: [{AttributeName: pk, KeyType: HASH}, {AttributeName: sk, KeyType: RANGE}]
+      PointInTimeRecoverySpecification: {PointInTimeRecoveryEnabled: true}
+      SSESpecification: {SSEEnabled: true}
+  PreSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .artifacts/onboarding/
+      Handler: index.preSignUp
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .artifacts/onboarding/
+      Handler: index.postConfirmation
+      Environment:
+        Variables: {ACCESS_TABLE_NAME: !Ref AccessTable}
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [dynamodb:GetItem, dynamodb:PutItem]
+              Resource: !GetAtt AccessTable.Arn
+  PreSignUpPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PreSignUpFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt UserPool.Arn
+  PostConfirmationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PostConfirmationFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !GetAtt UserPool.Arn
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .artifacts/health/
+      Handler: index.handler
+  ConfigFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .artifacts/config/
+      Handler: index.handler
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref UserPool
+          CLIENT_ID: !Ref AppClient
+          AUTH_DOMAIN: !Sub 'https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+          APP_HOST: !Ref AppHost
+          SIGNUP_ENABLED: 'true'
+  HealthIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: {ApiId: !Ref HttpApi, IntegrationType: AWS_PROXY, IntegrationUri: !GetAtt HealthFunction.Arn, PayloadFormatVersion: '2.0'}
+  HealthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /api/health'
+      Target: !Sub 'integrations/${HealthIntegration}'
+      AuthorizationType: NONE
+  HealthApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HealthFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/GET/api/health'
+  ConfigIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: {ApiId: !Ref HttpApi, IntegrationType: AWS_PROXY, IntegrationUri: !GetAtt ConfigFunction.Arn, PayloadFormatVersion: '2.0'}
+  ConfigRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /api/config'
+      Target: !Sub 'integrations/${ConfigIntegration}'
+      AuthorizationType: NONE
+  ConfigApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ConfigFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/GET/api/config'
+  AccessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .artifacts/domain/
+      Handler: access.handler
+      Environment:
+        Variables: {ACCESS_TABLE_NAME: !Ref AccessTable}
+      Policies:
+        - Statement:
+            - {Effect: Allow, Action: [dynamodb:GetItem], Resource: !GetAtt AccessTable.Arn}
+  AccessIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: {ApiId: !Ref HttpApi, IntegrationType: AWS_PROXY, IntegrationUri: !GetAtt AccessFunction.Arn, PayloadFormatVersion: '2.0'}
+  SitesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /api/v1/sites'
+      Target: !Sub 'integrations/${AccessIntegration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+  AccessApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AccessFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/GET/api/v1/sites'
+  HealthFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${HealthFunction}'
+      RetentionInDays: 14
+  HealthFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en HealthFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref HealthFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  ConfigFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ConfigFunction}'
+      RetentionInDays: 14
+  ConfigFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en ConfigFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref ConfigFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AccessFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AccessFunction}'
+      RetentionInDays: 14
+  AccessFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en AccessFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref AccessFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  PreSignUpFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${PreSignUpFunction}'
+      RetentionInDays: 14
+  PreSignUpFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en PreSignUpFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref PreSignUpFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  PostConfirmationFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${PostConfirmationFunction}'
+      RetentionInDays: 14
+  PostConfirmationFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en PostConfirmationFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref PostConfirmationFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 Outputs:
-  HealthUrl:
-    Description: URL de salud
-    Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/api/health'
+  PreSignUpFunctionName: {Value: !Ref PreSignUpFunction}
+  PostConfirmationFunctionName: {Value: !Ref PostConfirmationFunction}
+  ApiId: {Value: !Ref HttpApi}
+  ApiOrigin: {Value: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'}
+  ApiUrl: {Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'}
+  AuthorizerId: {Value: !Ref JwtAuthorizer}
+  AccessFunctionName: {Value: !Ref AccessFunction}
+  AccessFunctionArn: {Value: !GetAtt AccessFunction.Arn}
+  AccessTableName: {Value: !Ref AccessTable}
+  UserPoolId: {Value: !Ref UserPool}
+  ClientId: {Value: !Ref AppClient}
+  AuthDomain: {Value: !Sub 'https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'}

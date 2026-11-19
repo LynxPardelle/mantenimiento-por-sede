@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SedePulso - microservicio de inventario
+Parameters:
+  Environment: {Type: String, AllowedValues: [development, testing, production]}
+  ApiId: {Type: String}
+  AuthorizerId: {Type: String}
+  AccessFunctionName: {Type: String}
+  AccessFunctionArn: {Type: String}
+Resources:
+  AssetsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - {AttributeName: pk, AttributeType: S}
+        - {AttributeName: sk, AttributeType: S}
+      KeySchema: [{AttributeName: pk, KeyType: HASH}, {AttributeName: sk, KeyType: RANGE}]
+      PointInTimeRecoverySpecification: {PointInTimeRecoveryEnabled: true}
+      SSESpecification: {SSEEnabled: true}
+      TimeToLiveSpecification: {AttributeName: expiresAt, Enabled: true}
+  AssetsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../.artifacts/domain/
+      Handler: assets.handler
+      Runtime: nodejs24.x
+      PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/sedepulso-${Environment}-runtime-boundary'
+      Architectures: [arm64]
+      MemorySize: 256
+      Timeout: 20
+      Environment:
+        Variables:
+          ASSETS_TABLE_NAME: !Ref AssetsTable
+          ACCESS_FUNCTION_NAME: !Ref AccessFunctionName
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [dynamodb:GetItem, dynamodb:Query, dynamodb:PutItem]
+              Resource:
+                - !GetAtt AssetsTable.Arn
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !Ref AccessFunctionArn
+      Tags: {Product: sedepulso, Environment: !Ref Environment}
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: {ApiId: !Ref ApiId, IntegrationType: AWS_PROXY, IntegrationUri: !GetAtt AssetsFunction.Arn, PayloadFormatVersion: '2.0'}
+  ListRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'GET /api/v1/sites/{siteId}/assets'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  CreateRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'POST /api/v1/sites/{siteId}/assets'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+
+  ApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AssetsFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/*/api/v1/sites/*/assets'
+  AssetsFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AssetsFunction}'
+      RetentionInDays: 14
+  AssetsFunctionErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'SedePulso ${Environment} - errores en AssetsFunction'
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref AssetsFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+Outputs:
+  AssetsFunctionName: {Value: !Ref AssetsFunction}
+  AssetsFunctionArn: {Value: !GetAtt AssetsFunction.Arn}
+  AssetsTableName: {Value: !Ref AssetsTable}

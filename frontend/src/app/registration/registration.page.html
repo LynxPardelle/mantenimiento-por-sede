@@ -1,0 +1,201 @@
+<a class="skip-link" href="#registro">Ir al registro</a>
+<header class="site-header">
+  <a class="brand" routerLink="/" aria-label="SedePulso, inicio"
+    ><span class="brand-mark" aria-hidden="true">∿</span>SedePulso<span
+      class="brand-dot"
+      aria-hidden="true"
+      >.</span
+    ></a
+  >
+  <a class="text-link" routerLink="/">Volver al sitio <span aria-hidden="true">↗</span></a>
+</header>
+<main class="registration-layout" id="registro">
+  <aside class="registration-intro">
+    <p class="eyebrow">EMPIEZA CON UNA SEDE</p>
+    <h1>Tu primera revisión,<br /><em>con un lugar propio.</em></h1>
+    <p>
+      Crea tu cuenta y organiza el mantenimiento de una sede. Empieza con tus equipos, programa una
+      inspección y conserva el resultado.
+    </p>
+    <ul>
+      <li>Inventario e inspecciones manuales.</li>
+      <li>Resultado, nota e historial por equipo.</li>
+      <li>Acceso Piloto gratuito en esta etapa.</li>
+    </ul>
+    <p class="registration-note">
+      Sin tarjeta ni cobros automáticos. Los planes de pago siguen en diseño.
+    </p>
+    <a class="text-link" routerLink="/" fragment="planes"
+      >Conocer los planes <span aria-hidden="true">→</span></a
+    >
+  </aside>
+  <section class="registration-panel" aria-live="polite" [attr.aria-busy]="busy()">
+    @if (!auth.config()) {
+      <h2>Preparando el registro…</h2>
+      @if (auth.error()) {
+        <p role="alert" class="error-text">{{ auth.error() }}</p>
+        <button class="button secondary" (click)="prepare()">Volver a intentar</button>
+      }
+    } @else if (!available()) {
+      <p class="eyebrow">ESTE ENTORNO</p>
+      <h2>El registro no está habilitado aquí.</h2>
+      <p>
+        La demostración local utiliza datos de prueba. Para crear una cuenta real, abre el sitio
+        publicado de SedePulso.
+      </p>
+      <a class="button secondary" routerLink="/">Volver a SedePulso</a>
+    } @else if (stage() === 'complete') {
+      <p class="eyebrow">CORREO CONFIRMADO</p>
+      <h2>Tu cuenta está lista.</h2>
+      <p>
+        Ya puedes iniciar sesión y abrir tu primera sede. Desde ahí registrarás los equipos y su
+        próxima inspección.
+      </p>
+      @if (error()) {
+        <p role="alert" class="error-text">{{ error() }}</p>
+      }
+      <button class="button primary" (click)="login()">
+        Entrar a mi operación <span aria-hidden="true">→</span>
+      </button>
+    } @else {
+      @if (stage() === 'register') {
+        <p class="eyebrow">ACCESO PILOTO</p>
+        <h2>Crea tu cuenta</h2>
+        <p class="panel-description">El correo se verificará antes de activar tu espacio.</p>
+        <form novalidate (submit)="register($event)">
+          <div class="field">
+            <label for="organization">Nombre de tu organización</label
+            ><input
+              id="organization"
+              autocomplete="organization"
+              [formField]="registrationForm.organizationName"
+              placeholder="Ej. Refrigeración del Norte"
+            />
+          </div>
+          <div class="field">
+            <label for="first-site">Nombre de tu primera sede</label
+            ><input
+              id="first-site"
+              autocomplete="off"
+              [formField]="registrationForm.siteName"
+              placeholder="Ej. Sucursal Centro"
+            />
+          </div>
+          <div class="field">
+            <label for="timezone">Zona horaria de la sede</label
+            ><select id="timezone" [formField]="registrationForm.timeZone">
+              <option value="America/Mexico_City">Centro de México</option>
+              <option value="America/Cancun">Quintana Roo</option>
+              <option value="America/Tijuana">Baja California</option>
+              <option value="America/Hermosillo">Sonora</option>
+              <option value="America/Mazatlan">Pacífico de México</option>
+              <option value="America/Bogota">Bogotá / Lima</option>
+              <option value="UTC">UTC</option></select
+            ><small>Los vencimientos se interpretan en esta zona.</small>
+          </div>
+          <div class="field">
+            <label for="signup-email">Correo electrónico</label
+            ><input
+              id="signup-email"
+              type="email"
+              autocomplete="username"
+              inputmode="email"
+              [formField]="registrationForm.email"
+            />
+          </div>
+          <div class="field">
+            <label for="signup-password">Contraseña</label
+            ><input
+              id="signup-password"
+              type="password"
+              autocomplete="new-password"
+              aria-describedby="password-help"
+              [formField]="registrationForm.password"
+            /><small id="password-help"
+              >Al menos 14 caracteres con mayúscula, minúscula, número y símbolo.</small
+            >
+          </div>
+          @if (error()) {
+            <p class="message error" role="alert">{{ error() }}</p>
+          }
+          <button
+            class="button primary"
+            type="submit"
+            [disabled]="busy() || registrationForm().invalid()"
+          >
+            {{ busy() ? 'Creando tu cuenta…' : 'Crear cuenta gratuita' }}
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        <p class="registration-privacy">
+          Tu correo permite verificar el acceso. Los nombres y la zona horaria preparan tu primera
+          sede. La contraseña se envía por HTTPS al servicio de identidad de AWS; no se guarda en el
+          almacenamiento del navegador.
+        </p>
+        <button class="text-link" (click)="useExistingCode()" [disabled]="busy()">
+          Ya tengo un código de confirmación
+        </button>
+      } @else {
+        <p class="eyebrow">UN PASO MÁS</p>
+        <h2>Confirma tu correo</h2>
+        <p class="panel-description">
+          Introduce el código de seis dígitos de tu correo.
+          @if (destination()) {
+            <span> Destino: {{ destination() }}.</span>
+          }
+        </p>
+        @if (notice()) {
+          <p class="message" role="status">{{ notice() }}</p>
+        }
+        <form novalidate (submit)="confirm($event)">
+          <div class="field">
+            <label for="confirmation-email">Correo de tu cuenta</label
+            ><input
+              id="confirmation-email"
+              type="email"
+              autocomplete="username"
+              [formField]="confirmationForm.email"
+            />
+          </div>
+          <div class="field">
+            <label for="confirmation-code">Código de confirmación</label
+            ><input
+              id="confirmation-code"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              [formField]="confirmationForm.code"
+            />
+          </div>
+          @if (error()) {
+            <p class="message error" role="alert">{{ error() }}</p>
+          }
+          <button
+            class="button primary"
+            type="submit"
+            [disabled]="busy() || confirmationForm().invalid()"
+          >
+            {{ busy() ? 'Comprobando…' : 'Confirmar correo' }} <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        <div class="confirmation-actions">
+          <button
+            class="text-link"
+            (click)="resend()"
+            [disabled]="busy() || cooldown() > 0 || confirmationForm.email().invalid()"
+          >
+            {{
+              cooldown() > 0 ? 'Reenviar en ' + cooldown() + ' s' : 'Solicitar otro código'
+            }}</button
+          ><button class="text-link" (click)="login()" [disabled]="busy()">
+            Ya confirmé: iniciar sesión
+          </button>
+        </div>
+      }
+    }
+  </section>
+</main>
+<footer class="site-footer">
+  <span>SedePulso · Un producto de ZooBeriah Systems</span
+  ><a routerLink="/status">Estado del servicio</a>
+</footer>
