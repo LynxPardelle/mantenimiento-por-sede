@@ -22,6 +22,10 @@ test('a separate OIDC observer can query only business tables and cannot change 
     const trust = role.AssumeRolePolicyDocument.Statement[0].Condition.StringEquals;
     assert.equal(trust['token.actions.githubusercontent.com:sub'], `repo:LynxPardelle@74871143/mantenimiento-por-sede@1461766091:environment:${env.toLowerCase()}`);
     const statements = role.Policies[0].PolicyDocument.Statement;
+    const metadata = statements.find(s => s.Sid === 'DiscoverOwnStackOutputs');
+    assert.deepEqual(metadata.Action, ['cloudformation:DescribeStacks', 'cloudformation:ListStackResources']);
+    assert.equal(metadata.Resource.length, 4);
+    assert.ok(metadata.Resource.every(arn => arn.includes(`:stack/sedepulso-${env.toLowerCase()}-`)));
     const query = statements.find(s => s.Sid === 'ReadEnrolledSiteData');
     assert.deepEqual(query.Action, ['dynamodb:Query']);
     assert.equal(query.Resource.length, 2);

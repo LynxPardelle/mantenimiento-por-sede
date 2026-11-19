@@ -36,7 +36,8 @@ try {
   };
   const describeStack = name => {
     const stack = aws(['cloudformation', 'describe-stacks', '--stack-name', name, '--region', 'us-east-1']).Stacks[0];
-    return { status: stack.StackStatus, outputs: Object.fromEntries((stack.Outputs || []).map(o => [o.OutputKey, o.OutputValue])) };
+    const resources = aws(['cloudformation', 'list-stack-resources', '--stack-name', name, '--region', 'us-east-1']).StackResourceSummaries;
+    return { status: stack.StackStatus, outputs: Object.fromEntries((stack.Outputs || []).map(o => [o.OutputKey, o.OutputValue])), alarmNames: resources.filter(r => r.ResourceType === 'AWS::CloudWatch::Alarm').map(r => r.PhysicalResourceId) };
   };
   const fetchJson = async url => {
     const response = await fetch(url, { signal: AbortSignal.timeout(30000), redirect: 'error' });

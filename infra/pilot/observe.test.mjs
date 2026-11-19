@@ -7,13 +7,13 @@ const fixture = () => {
   const writes = [];
   const objects = new Map([['production/registry.json', { schemaVersion: 1, cohorts: [] }]]);
   const aws = args => {
-    if (args[0] === 'cloudwatch') return { MetricAlarms: [{ StateValue: 'OK', AlarmActions: [] }] };
+    if (args[0] === 'cloudwatch') return { MetricAlarms: ['platform', 'assets', 'inspections', 'frontend'].map(name => ({ AlarmName: `sedepulso-production-${name}-errors`, StateValue: 'OK', AlarmActions: [] })) };
     if (args[0] === 'dynamodb' && args[1] === 'describe-table') return { Table: { TableStatus: 'ACTIVE', ItemCount: 0 } };
     throw new Error('unexpected read');
   };
   return { writes, objects, dependencies: {
     aws,
-    describeStack: name => ({ status: 'UPDATE_COMPLETE', outputs: { AccessTableName: 'access', AssetsTableName: 'assets', InspectionsTableName: 'inspections' } }),
+    describeStack: name => ({ status: 'UPDATE_COMPLETE', outputs: { AccessTableName: 'access', AssetsTableName: 'assets', InspectionsTableName: 'inspections' }, alarmNames: [`${name}-errors`] }),
     readJson: async key => { if (!objects.has(key)) throw new Error('missing'); return objects.get(key); },
     putJson: async (key, value, options) => { writes.push({ key, value, options }); return true; },
     fetchJson: async url => url.endsWith('/api/config') ? { signupEnabled: true, billingEnabled: false } : { status: 'ok' },
@@ -77,4 +77,17 @@ test('latest and totals use the saved weekly cut rather than a later reconstruct
   assert.equal(r.cohorts[0].weeks[0].onTime.denominator, 0);
   assert.equal(r.totals['enrolled-real'].onTime.denominator, 0);
   assert.equal(r.weeklySnapshots[0].created, false);
+});
+
+test('describes exact alarms discovered in own stacks instead of requesting the account alarm wildcard', async () => {
+  const f = fixture();
+  const names = ['sedepulso-production-platform-errors', 'sedepulso-production-assets-errors', 'sedepulso-production-inspections-errors', 'sedepulso-production-frontend-errors'];
+  const calls = [];
+  await observePilot({ ...f.dependencies, environment: 'production', describeStack: name => ({ ...f.dependencies.describeStack(name), alarmNames: [names.find(n => n.startsWith(name))] }), aws: args => {
+    if (args[0] === 'cloudwatch') { calls.push(args); return { MetricAlarms: names.map(AlarmName => ({ AlarmName, StateValue: 'OK', AlarmActions: [] })) }; }
+    return f.dependencies.aws(args);
+  } });
+  assert.ok(calls[0].includes('--alarm-names'));
+  assert.ok(!calls[0].includes('--alarm-name-prefix'));
+  assert.deepEqual(calls[0].slice(calls[0].indexOf('--alarm-names') + 1, calls[0].indexOf('--region')), names);
 });
