@@ -40,7 +40,7 @@ La evidencia de implementación y verificación se registra por ambiente. La pro
 | TASK-003 | Stack Inspections con programación, pendientes, historial y cierre. | Valida equipo por Assets; idempotencia y concurrencia correctas; elimina índice pendiente y confirma registro. | Implementada y verificada por API en los tres ambientes |
 | TASK-004 | Sección Angular diferida, sede, inventario, programación y SignalStore. | Alta y programación completas; error de red conserva formulario y permite reintento sin duplicar. | Implementada y probada; publicada en los tres ambientes |
 | TASK-005 | Resultado e historial accesibles en móvil. | Cierre y consulta tras recarga; etiquetas, teclado y señal de éxito accesible. | Angular probado y demo recorrida; landing/registro móvil verificados |
-| TASK-006 | Recorrido técnico de dos organizaciones/sedes y piloto de cuatro semanas. | Aislamiento/reintentos en nube; operación real participante; métricas con periodo y denominadores. | Recorrido técnico aprobado en tres ambientes; piloto real pendiente |
+| TASK-006 | Recorrido técnico de dos organizaciones/sedes y piloto de cuatro semanas. | Aislamiento/reintentos en nube; operación real participante; métricas con periodo y denominadores. | Recorrido técnico aprobado; observador privado y seguimiento implementados; piloto real pendiente |
 | TASK-007 | SSR Lambda, Function URL IAM, CloudFront/OAC, S3, ACM y DNS. | HTML/hidratación, estáticos, HTTPS, rechazo de acceso directo y API sin caché operativa. | Implementada y verificada en los tres ambientes |
 | TASK-008 | Empaquetado y orquestador de cuatro stacks. | Orden correcto y actualización de un servicio sin redesplegar los demás con contrato estable. | Orquestador implementado y entrega aprobada en tres ambientes |
 | TASK-009 | CI de pruebas/build/lint y deploy condicional OIDC. | Checks pasan, rol y `AWS_DEPLOY_ROLE_ARN` configurados; promoción por PR permitido. | OIDC, publicación y promoción aprobados en tres ambientes |
@@ -146,3 +146,16 @@ El ejercicio de recuperación del 2026-11-19 verificó un marcador en una copia 
 Verificación final: 41/41 pruebas backend, 17/17 de CI y 31/31 de Angular, build SSR y lint aprobados. Cada ambiente pasó 24 comprobaciones de dominio, cinco de alta aislada y web/orígenes privados; tres reportes y manifiesto descargados/comprobados por run. Las capturas y commits exactos están en el [cierre de entrega](../docs/releases/2026-11-19-sedepulso.md). El buzón autorizado sólo se usó para cuentas de prueba eliminadas; no se versionan dirección, código, contraseña, tokens o datos personales.
 
 La [guía operativa del piloto](../docs/producto/piloto-operativo.md) prepara semanas 0–4, métricas y decisión de continuidad; no acredita participante, aceptación ni precio.
+
+## TASK-006: instrumentación y seguimiento del piloto
+
+El 2026-11-19 se implementó un recolector operacional de sólo lectura, separado de las Lambdas del producto. Consulta únicamente Assets e Inspections para cohortes explícitas; no lee nombres, texto de notas o valores de autor. Los informes guardan agregados por código en un bucket privado, versionado y cifrado, con retención definida para reportes. La [guía de operación](../docs/runbooks/piloto-metricas.md) permite retomarlo desde remoto.
+
+- Observación diaria en GitHub Actions a las 07:17 GMT-6; revisión de Codex en este chat a las 08:00. La frescura se comprueba contra `checkedAt`, con señal de atraso después de 26 horas.
+- Semanas 1–4 por calendario local: puntualidad con numerador/denominador, pendientes incluidos, cierres, resultados, inventario y evidencia estructural. Tasas sin denominador son nulas. Los cortes semanales se crean una sola vez y se reutilizan al calcular los totales posteriores.
+- Fechas `createdAt` del servidor para nuevas altas y programaciones, estables al reintentar. No se reconstruyen fechas ausentes en registros anteriores.
+- Registro privado inicial vacío: `awaiting-participant`, `pilotWeek=null`. Las pruebas técnicas no inscriben un participante ni demuestran demanda.
+- Línea base puntual de producción 23:23:06–17 UTC: Access, Assets e Inspections sin registros. Nueve alarmas propias en OK, sin canal de notificación. Los metadatos aproximados del observador no equivalen a un conteo de clientes.
+- Historial comparado con la línea base, esfuerzo humano, utilidad semántica de las notas, coste atribuible y aceptación de oferta requieren evidencia real. No se asignan ceros ficticios ni se activa Stripe.
+
+Verificación local inicial de esta ampliación: 43 pruebas backend, 19 CI/IAM y 26 del piloto aprobadas; lint de los cuatro templates y del bootstrap aprobado. La publicación y los runs OIDC del observador se registrarán por ambiente tras su comprobación. TASK-006 continúa abierto hasta disponer de operación real, cuatro semanas observadas y decisión comercial.

@@ -1,7 +1,7 @@
 import { ulid } from 'ulid';
 import { digest, fail, guarded, httpRoute, identifier, identityOf, idempotencyKey, internalRequest, jsonBody, pageOptions, pageResult, response, scopeFor, text } from './common.mjs';
 
-export function createAssetsHandler({ repository, authorize, idGenerator = ulid }) {
+export function createAssetsHandler({ repository, authorize, idGenerator = ulid, now = () => new Date() }) {
   return guarded(async (event) => {
     const internal = internalRequest(event, 'getAsset');
     const identity = identityOf(event, internal);
@@ -22,7 +22,7 @@ export function createAssetsHandler({ repository, authorize, idGenerator = ulid 
     const body = jsonBody(event, ['name', 'type', 'status']);
     const normalized = { name: text(body.name, 'name', 120), type: text(body.type, 'type', 80), status: body.status ?? 'operational' };
     if (!['operational', 'out_of_service'].includes(normalized.status)) fail(400, 'invalid_status');
-    const item = await repository.createAsset({ scope, actor: identity.sub, operation: 'createAsset', key: idempotencyKey(event), fingerprint: digest(normalized), item: { id: idGenerator(), ...normalized } });
+    const item = await repository.createAsset({ scope, actor: identity.sub, operation: 'createAsset', key: idempotencyKey(event), fingerprint: digest(normalized), item: { id: idGenerator(), ...normalized, createdAt: now().toISOString() } });
     return response(201, item);
   });
 }

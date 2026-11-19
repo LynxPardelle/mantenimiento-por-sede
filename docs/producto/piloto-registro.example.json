@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "cohorts": [
+    {
+      "code": "ejemplo-tecnico-sin-cliente",
+      "orgId": "org_ficticia_no_existe",
+      "siteId": "site_ficticia_no_existe",
+      "timeZone": "Etc/GMT+6",
+      "startDate": "2026-11-23",
+      "classification": "technical",
+      "agreedAt": "2026-11-19T12:00:00.000Z",
+      "goals": {
+        "onTimeRateTarget": 0.8,
+        "minimumDueInspections": 5
+      }
+    }
+  ]
+}

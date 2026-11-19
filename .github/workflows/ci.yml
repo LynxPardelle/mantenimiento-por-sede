@@ -67,6 +67,7 @@ jobs:
       - run: npm --prefix infra ci
       - run: npm --prefix infra test
       - run: node --test infra/ci/*.test.mjs
+      - run: node --test infra/pilot/*.test.mjs
       - run: npm --prefix frontend test -- --watch=false
       - run: npm --prefix frontend run build
       - run: python -m pip install cfn-lint==1.60.1
