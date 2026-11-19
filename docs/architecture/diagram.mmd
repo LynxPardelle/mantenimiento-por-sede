@@ -1,8 +1,38 @@
-flowchart LR
-    Operator["Coordinador o técnico"] --> Web["Angular standalone<br/>NgRx SignalStore"]
-    Web -->|"GET /api/health"| Gateway["API Gateway<br/>HTTP API"]
-    Gateway --> Health["Lambda Node.js 24<br/>Health"]
-    Web -. "Inicio de sesión previsto" .-> OIDC["Proveedor OIDC"]
-    Web -. "Operaciones autenticadas previstas" .-> Gateway
-    Gateway -. "Rutas de dominio previstas" .-> Domain["Lambda de dominio<br/>Autorización por sede"]
-    Domain -. "Lectura y escritura previstas" .-> Data[("DynamoDB bajo demanda<br/>Equipos e inspecciones")]
+flowchart TB
+    Operator["Coordinador o técnico"] --> CDN["CloudFront + ACM + Route 53<br/>sedepulso[-ambiente].lynxpardelle.com"]
+    CDN -->|"HTML · OAC + AWS_IAM"| SSR["Lambda Angular SSR<br/>Node.js 24 ARM64"]
+    CDN -->|"Estáticos · OAC"| Static[("S3 privado")]
+    CDN -->|"/api/* · sin caché operativa"| Gateway["API Gateway HTTP API<br/>JWT authorizer"]
+    Operator -->|"Authorization code + PKCE"| Cognito["Cognito<br/>Sin alta pública"]
+    Cognito -. "Emisor y claves JWT" .-> Gateway
+
+    subgraph Platform["Stack plataforma"]
+        Gateway
+        Cognito
+        Access["Lambda Access<br/>Sedes, pertenencia y rol"]
+        AccessData[("AccessTable")]
+        Health["Lambda Health"]
+        Config["Configuración pública"]
+        Access --> AccessData
+    end
+
+    subgraph Inventory["Stack inventario"]
+        Assets["Lambda Assets"]
+        AssetsData[("AssetsTable")]
+        Assets --> AssetsData
+    end
+
+    subgraph Inspection["Stack inspecciones"]
+        Inspections["Lambda Inspections"]
+        InspectionsData[("InspectionsTable<br/>PendingBySite")]
+        Inspections --> InspectionsData
+    end
+
+    Gateway -->|"/api/health"| Health
+    Gateway -->|"/api/config"| Config
+    Gateway -->|"/api/v1/sites"| Access
+    Gateway -->|"Rutas de equipos"| Assets
+    Gateway -->|"Rutas de inspecciones"| Inspections
+    Assets -->|"Invoke IAM · contexto autorizado"| Access
+    Inspections -->|"Invoke IAM · contexto autorizado"| Access
+    Inspections -->|"Invoke IAM · validar equipo"| Assets

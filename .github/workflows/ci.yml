@@ -1,0 +1,136 @@
+name: SedePulso - verificar y publicar
+
+on:
+  pull_request:
+  push:
+    branches: [development, testing, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      runtime: ${{ steps.changes.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: changes
+        name: Identificar cambios de aplicación
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+
+          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as source:
+              event = json.load(source)
+          kind = os.environ["GITHUB_EVENT_NAME"]
+          runtime = True
+          before = event.get("before") if kind == "push" else event.get("pull_request", {}).get("base", {}).get("sha")
+          if kind in ("push", "pull_request") and isinstance(before, str) and re.fullmatch(r"[0-9a-fA-F]{40}", before) and set(before) != {"0"}:
+              result = subprocess.run(["git", "diff", "--name-only", "-z", before, "HEAD"], capture_output=True)
+              if result.returncode == 0:
+                  files = [name.decode("utf-8", "replace") for name in result.stdout.split(b"\0") if name]
+                  is_document = lambda name: name.startswith(("docs/", "plan/")) or name.lower().endswith(".md")
+                  runtime = not files or not all(is_document(name) for name in files)
+          value = str(runtime).lower()
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"runtime={value}\n")
+          print(f"Ejecutar verificación y despliegue: {value}")
+          PY
+
+  verify:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            infra/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: npm --prefix frontend ci
+      - run: npm --prefix infra ci
+      - run: npm --prefix infra test
+      - run: node --test infra/ci/*.test.mjs
+      - run: npm --prefix frontend test -- --watch=false
+      - run: npm --prefix frontend run build
+      - run: python -m pip install cfn-lint==1.60.1
+      - run: node infra/ci/render.mjs > "$RUNNER_TEMP/sedepulso-ci.json"
+      - run: cfn-lint --template "$RUNNER_TEMP/sedepulso-ci.json"
+      - run: cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/frontend.yaml
+
+  deploy:
+    needs: [scope, verify]
+    if: always() && github.event_name == 'push' && needs.scope.outputs.runtime == 'true' && needs.verify.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      id-token: write
+    environment: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+    concurrency:
+      group: sedepulso-${{ github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+      - run: npm --prefix frontend ci && npm --prefix infra ci
+      - run: npm --prefix frontend run build
+      - run: node infra/tools/package.mjs
+      - run: node infra/tools/deploy.mjs --environment "$DEPLOY_ENV"
+        env:
+          DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+          CLOUDFORMATION_ROLE_ARN: ${{ vars.CLOUDFORMATION_ROLE_ARN }}
+          SIGNUP_WEB_ACL_ARN: ${{ vars.SIGNUP_WEB_ACL_ARN }}
+      - name: Verificar ambiente publicado
+        run: node infra/tools/smoke-cloud.mjs --environment "$DEPLOY_ENV"
+        env:
+          DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+      - name: Verificar alta y organización aislada
+        run: node infra/tools/provision-signup-smoke.mjs --environment "$DEPLOY_ENV"
+        env:
+          DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+      - name: Verificar HTTPS y orígenes privados
+        run: node infra/tools/verify-web.mjs --environment "$DEPLOY_ENV"
+        env:
+          DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+      - name: Conservar evidencia sin credenciales
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sedepulso-${{ github.ref_name }}-${{ github.sha }}
+          if-no-files-found: ignore
+          path: |
+            infra/.artifacts/smoke-development.json
+            infra/.artifacts/smoke-testing.json
+            infra/.artifacts/smoke-production.json
+            infra/.artifacts/signup-smoke-development.json
+            infra/.artifacts/signup-smoke-testing.json
+            infra/.artifacts/signup-smoke-production.json
+            infra/.artifacts/web-development.json
+            infra/.artifacts/web-testing.json
+            infra/.artifacts/web-production.json
+            infra/.artifacts/manifest.json

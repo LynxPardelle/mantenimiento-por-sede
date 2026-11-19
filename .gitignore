@@ -3,3 +3,8 @@
 !.env.example
 .aws-sam/
 coverage/
+node_modules/
+infra/.artifacts/
+.tools/
+test-results/
+playwright-report/
