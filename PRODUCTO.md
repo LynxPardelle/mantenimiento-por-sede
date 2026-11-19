@@ -36,3 +36,9 @@ La [decisión de nombre](docs/branding.md) registra alternativas y alcance de la
 ## Punto de partida
 
 El prototipo [examen-python](https://github.com/LynxPardelle/examen-python/tree/cc308b5e01271c555d8692fb58250f11c4032266) modela dispositivos, tipos, estados, lecturas y mantenimientos. Las entidades de dispositivo y mantenimiento sirvieron como referencia de dominio. Esta implementación es nueva; el original conserva su [licencia MIT](https://github.com/LynxPardelle/examen-python/blob/cc308b5e01271c555d8692fb58250f11c4032266/LICENSE).
+
+## Registro y planes de esta etapa
+
+El registro público confirma el correo con Cognito y crea una organización y sede inicial propias. El acceso Piloto es individual y gratuito en esta etapa, sin tarjeta ni cobros automáticos. Operación y Red son propuestas en diseño, no productos contratables. Sus precios y capacidades se validarán con el piloto; Stripe se incorporará después de definir qué se vende y sus condiciones.
+
+La [propuesta de planes](docs/producto/planes-y-suscripciones.md) separa capacidades actuales de futuras y define las preguntas para poner precio por sede activa. Las invitaciones, la autogestión de más sedes, la recurrencia automática y los informes nuevos requieren implementación antes de ofrecerse como prestaciones disponibles.

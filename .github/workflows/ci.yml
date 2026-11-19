@@ -88,8 +88,6 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -105,6 +103,7 @@ jobs:
           DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
           CLOUDFORMATION_ROLE_ARN: ${{ vars.CLOUDFORMATION_ROLE_ARN }}
           SIGNUP_WEB_ACL_ARN: ${{ vars.SIGNUP_WEB_ACL_ARN }}
+          COGNITO_WAF_POOL_READY: ${{ vars.COGNITO_WAF_POOL_READY }}
       - name: Verificar ambiente publicado
         run: node infra/tools/smoke-cloud.mjs --environment "$DEPLOY_ENV"
         env:

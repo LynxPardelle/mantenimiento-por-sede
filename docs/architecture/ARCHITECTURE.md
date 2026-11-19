@@ -14,7 +14,7 @@ La arquitectura usa microservicios serverless AWS y Angular servido por Lambda. 
 | Lambda SSR Node.js 24 ARM64 | Generar HTML de Angular detrás de CloudFront. | Sin permisos DynamoDB ni acceso a tablas de dominio. |
 | CloudFront, S3 privado y OAC | HTTPS, estáticos y acceso privado a orígenes. | Firma acceso a S3 y Function URL SSR. `/api/*` va a HTTP API sin caché operativa. |
 | API Gateway HTTP API | Enrutamiento y autorización JWT. | Verifica firma, emisor y audiencia o `client_id`; entrega claims verificados. |
-| Cognito | Identidad y sesión con authorization code y PKCE. | Cliente público sin secreto; registro abierto deshabilitado. |
+| Cognito | Identidad y sesión con authorization code y PKCE. | Cliente público sin secreto; registro propio con correo verificado y creación de espacio aislado. |
 | Access | Resolver sedes, pertenencia, organización y rol. | Único servicio con acceso directo a `AccessTable`. |
 | Assets | Alta y consulta paginada de equipos. | Tabla propia; invoca Access por IAM. |
 | Inspections | Programación, pendientes, historial y cierre. | Tabla propia e índice de pendientes; invoca Access y Assets por IAM. |
@@ -43,7 +43,7 @@ No existen transacciones entre servicios ni acceso directo a tablas ajenas. La i
 4. Access busca pertenencia por el `sub` verificado y resuelve `orgId`, sedes y rol. Organización y rol no proceden del cuerpo ni de un encabezado elegido por el cliente.
 5. Assets e Inspections usan ese contexto en claves y permisos. Las llamadas internas están limitadas por IAM a las funciones necesarias.
 
-Una persona coordinadora puede registrar equipos y programar inspecciones. Una persona técnica puede consultar sus sedes y registrar resultados. Sede ajena devuelve `404`; rol insuficiente en sede propia, `403`; token ausente, inválido o de uso incorrecto, `401`. La interfaz inicial no administra organizaciones, usuarios o membresías.
+Una persona coordinadora puede registrar equipos y programar inspecciones. Una persona técnica puede consultar sus sedes y registrar resultados. Sede ajena devuelve `404`; rol insuficiente en sede propia, `403`; token ausente, inválido o de uso incorrecto, `401`. El alta pública crea una organización y sede inicial propias. La autogestión de invitaciones y sedes adicionales sigue pendiente; las asignaciones existentes también pueden administrarse con las herramientas técnicas.
 
 Las rutas de dominio no exigen el scope `openid` en el autorizador; ese scope pertenece al inicio de sesión OIDC. La validación de pertenencia y rol es la misma para las sesiones de la interfaz y las identidades técnicas de smoke. Un ID token no sustituye al access token.
 
@@ -99,3 +99,11 @@ El [plan](../../plan/feature-mantenimiento-1.md) registra implementación, prueb
 - [Cognito: authorization code con PKCE](https://docs.aws.amazon.com/cognito/latest/developerguide/using-pkce-in-authorization-code.html).
 - [HTTP API con CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-api.html).
 - [NgRx SignalStore](https://ngrx.io/guide/signals/signal-store).
+
+## Registro y entrega continua
+
+Cognito ejecuta validación previa y activación posterior a la confirmación. Los tres atributos persistidos describen organización, sede y zona horaria; no confieren permisos. El servidor deriva los IDs del sujeto verificado, fija `plan=pilot` y usa una transacción para persistir organización y pertenencia. Reintentos o confirmaciones repetidas conservan la asignación inicial. Véase [contrato de registro](../contracts/registration.md).
+
+Un WAF regional compartido sólo redirige `GET /signup` del dominio Cognito de cada ambiente hacia su `/registro`; login, recuperación y las API JSON mantienen su funcionamiento. Esto evita presentar un formulario del proveedor que no recoge los datos de la sede.
+
+GitHub usa OIDC con subject inmutable y roles por environment; el rol de servicio CloudFormation exige una boundary de ejecución por ambiente. Las promociones conservan las protecciones existentes. Cada deploy ejecuta comprobaciones de dominio, aprovisionamiento y orígenes privados. El [runbook OIDC](../runbooks/ci-oidc.md) detalla alcances y límites IAM.

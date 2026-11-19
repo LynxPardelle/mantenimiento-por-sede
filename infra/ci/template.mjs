@@ -4,9 +4,13 @@ const version = '2012-10-17';
 const statement = (Sid, Action, Resource, Condition) => ({ Sid, Effect: 'Allow', Action, Resource, ...(Condition ? { Condition } : {}) });
 const policy = (Statement) => ({ Version: version, Statement });
 
-export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPrefix = `repo:${repository}`, region = 'us-east-1' }) {
+export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPrefix = `repo:${repository}`, region = 'us-east-1', userPoolArns = {} }) {
   if (!/^\d{12}$/.test(account) || region !== 'us-east-1' || !/^Z[A-Z0-9]+$/.test(hostedZoneId)) throw new Error('Parámetros de CI no válidos.');
   if (!/^repo:LynxPardelle(?:@\d+)?\/mantenimiento-por-sede(?:@\d+)?$/.test(subjectPrefix)) throw new Error('El subject OIDC no corresponde al repositorio de SedePulso.');
+  for (const [environment, arn] of Object.entries(userPoolArns)) {
+    if (!environments.includes(environment) || !new RegExp(`^arn:aws:cognito-idp:${region}:${account}:userpool/${region}_[A-Za-z0-9]+$`).test(arn)) throw new Error('El ARN de UserPool no corresponde a la cuenta o región de SedePulso.');
+  }
+  if (new Set(Object.values(userPoolArns)).size !== Object.values(userPoolArns).length) throw new Error('Cada ambiente debe tener su propio UserPool.');
   const template = { AWSTemplateFormatVersion: '2010-09-09', Description: 'SedePulso - OIDC por ambiente y roles CloudFormation con boundary runtime', Resources: {}, Outputs: {} };
   const artifacts = `sedepulso-artifacts-${account}-${region}`;
   const globalRegion = { StringEquals: { 'aws:RequestedRegion': region } };
@@ -88,7 +92,9 @@ export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPre
             statement('CreateTaggedUserPool', 'cognito-idp:CreateUserPool', '*', { StringEquals: { 'aws:RequestTag/Product': 'sedepulso', 'aws:RequestTag/Environment': environment, 'aws:RequestedRegion': region } }),
             statement('ManageUserPool', ['cognito-idp:DescribeUserPool', 'cognito-idp:UpdateUserPool', 'cognito-idp:DeleteUserPool', 'cognito-idp:GetUserPoolMfaConfig', 'cognito-idp:SetUserPoolMfaConfig', 'cognito-idp:AddCustomAttributes', 'cognito-idp:CreateUserPoolClient', 'cognito-idp:DescribeUserPoolClient', 'cognito-idp:UpdateUserPoolClient', 'cognito-idp:DeleteUserPoolClient', 'cognito-idp:ListUserPoolClients', 'cognito-idp:ListUserPoolClientSecrets', 'cognito-idp:CreateUserPoolDomain', 'cognito-idp:UpdateUserPoolDomain', 'cognito-idp:DeleteUserPoolDomain', 'cognito-idp:TagResource', 'cognito-idp:UntagResource', 'cognito-idp:ListTagsForResource'], pool, poolTags),
             statement('ReadUserPoolDomain', 'cognito-idp:DescribeUserPoolDomain', '*', globalRegion),
-            statement('OwnPoolWafAssociation', ['cognito-idp:AssociateWebACL', 'cognito-idp:DisassociateWebACL', 'cognito-idp:GetWebACLForResource'], pool, poolTags),
+            // WAF's dependent Cognito authorization does not supply ResourceTag context.
+            // Discover the exact tagged pool during administrator bootstrap; omit until it exists.
+            ...(userPoolArns[environment] ? [statement('OwnPoolWafAssociation', ['cognito-idp:AssociateWebACL', 'cognito-idp:DisassociateWebACL', 'cognito-idp:GetWebACLForResource'], userPoolArns[environment])] : []),
             statement('SharedSignupAcl', ['wafv2:AssociateWebACL', 'wafv2:GetWebACL', 'wafv2:ListResourcesForWebACL'], signupAclArn),
             statement('ReadOrRemoveOwnPoolAssociation', ['wafv2:GetWebACLForResource', 'wafv2:DisassociateWebACL'], '*', globalRegion),
             statement('ManageHttpApi', ['apigateway:GET', 'apigateway:POST', 'apigateway:PUT', 'apigateway:PATCH', 'apigateway:DELETE'], [`arn:aws:apigateway:${region}::/apis`, `arn:aws:apigateway:${region}::/apis/*`, `arn:aws:apigateway:${region}::/tags/*`]),

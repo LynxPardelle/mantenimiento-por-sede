@@ -132,4 +132,54 @@ describe('Registro de SedePulso', () => {
       );
     await rejected;
   });
+
+  it('distingue la activación pendiente de una validación previa sin prometer reparación al entrar', async () => {
+    const service = await configure();
+    for (const response of [
+      {
+        __type: 'UserLambdaValidationException',
+        message:
+          'PostConfirmation failed with error signup_workspace_pending. Internal diagnostic.',
+      },
+      {
+        __type: 'UserLambdaValidationException',
+        Message:
+          'PostConfirmation failed with error signup_workspace_pending. Internal diagnostic.',
+      },
+      { __type: 'UnexpectedLambdaException', message: 'Internal diagnostic.' },
+      { __type: 'InvalidLambdaResponseException', message: 'Internal diagnostic.' },
+    ]) {
+      const confirmation = service.confirm(input.email, '123456');
+      const rejected = expect(confirmation).rejects.toMatchObject({
+        code: response.__type,
+        message: expect.stringContaining('requiere revisión'),
+      });
+      await Promise.resolve();
+      TestBed.inject(HttpTestingController)
+        .expectOne(endpoint)
+        .flush(response, { status: 400, statusText: 'Bad Request' });
+      await rejected;
+      await expect(confirmation).rejects.not.toThrow('inicia sesión');
+      await expect(confirmation).rejects.not.toThrow('Internal diagnostic');
+      await expect(confirmation).rejects.not.toThrow('signup_workspace_pending');
+    }
+  });
+
+  it('conserva la orientación de datos para una validación previa del registro', async () => {
+    const service = await configure();
+    const signup = service.signUp(input);
+    const rejected = expect(signup).rejects.toMatchObject({
+      code: 'UserLambdaValidationException',
+      message: expect.stringContaining('nombre de organización'),
+    });
+    await Promise.resolve();
+    TestBed.inject(HttpTestingController)
+      .expectOne(endpoint)
+      .flush(
+        { __type: 'UserLambdaValidationException', message: 'signup_invalid_site_name' },
+        { status: 400, statusText: 'Bad Request' },
+      );
+    await rejected;
+    await expect(signup).rejects.not.toThrow('signup_invalid_site_name');
+  });
 });
