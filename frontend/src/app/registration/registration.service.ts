@@ -133,6 +133,16 @@ function registrationError(error: unknown): RegistrationError {
     typeof error.error?.__type === 'string'
       ? error.error.__type.split('#').at(-1)
       : 'ConnectionError';
+  const diagnostic =
+    typeof error.error?.message === 'string'
+      ? error.error.message
+      : typeof error.error?.Message === 'string'
+        ? error.error.Message
+        : '';
+  const activationPending =
+    code === 'UserLambdaValidationException' && diagnostic.includes('signup_workspace_pending');
+  const activationReviewMessage =
+    'Tu correo puede estar confirmado, pero la activación de tu espacio está pendiente y requiere revisión.';
   const messages: Record<string, string> = {
     UsernameExistsException:
       'Ese correo ya tiene una cuenta. Si está pendiente, confirma con tu código; si ya la activaste, inicia sesión.',
@@ -150,10 +160,8 @@ function registrationError(error: unknown): RegistrationError {
       'No se pudo enviar el código. Revisa el correo y vuelve a solicitarlo más tarde.',
     UserLambdaValidationException:
       'No se pudo preparar tu espacio con esos datos. Revisa el nombre de organización, sede y zona horaria.',
-    UnexpectedLambdaException:
-      'No se pudo terminar la activación. Si ya confirmaste tu correo, intenta iniciar sesión de nuevo.',
-    InvalidLambdaResponseException:
-      'No se pudo terminar la activación. Inténtalo de nuevo en unos minutos.',
+    UnexpectedLambdaException: activationReviewMessage,
+    InvalidLambdaResponseException: activationReviewMessage,
     NotAuthorizedException:
       'No se pudo completar la confirmación. Si ya activaste tu cuenta, inicia sesión.',
     UserNotFoundException:
@@ -161,8 +169,10 @@ function registrationError(error: unknown): RegistrationError {
   };
   return new RegistrationError(
     code || 'ConnectionError',
-    messages[code || ''] ||
-      'No pudimos completar la solicitud. Revisa tu conexión e inténtalo de nuevo.',
+    activationPending
+      ? activationReviewMessage
+      : messages[code || ''] ||
+          'No pudimos completar la solicitud. Revisa tu conexión e inténtalo de nuevo.',
     ['UsernameExistsException', 'LimitExceededException', 'CodeDeliveryFailureException'].includes(
       code || '',
     ),

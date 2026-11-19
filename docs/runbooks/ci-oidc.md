@@ -30,11 +30,12 @@ El bootstrap conserva las protecciones existentes. Se detiene si un ambiente exi
 
 ## Variables de GitHub
 
-Cada environment contiene tres variables públicas de configuración, no secretos:
+Cada environment contiene cuatro variables públicas de configuración, no secretos:
 
 - `AWS_DEPLOY_ROLE_ARN`: rol OIDC del ambiente.
 - `CLOUDFORMATION_ROLE_ARN`: rol de servicio que recibe `cloudformation deploy --role-arn`.
 - `SIGNUP_WEB_ACL_ARN`: ACL regional compartido para dirigir el signup de Cognito al registro completo.
+- `COGNITO_WAF_POOL_READY`: `true` sólo cuando el bootstrap comprobó el pool y autorizó su ARN exacto. `false` crea únicamente la plataforma inicial, sin asociar ACL ni publicar servicios/frontend; después requiere repetir el bootstrap y el workflow.
 
 El job no usa una variable de environment en su `if` previo al arranque. GitHub sólo ofrece esas variables después de declarar/cargar el environment; las entradas del paso de credenciales y del paso de deploy las consumen allí.
 
@@ -52,7 +53,13 @@ Un único WebACL regional, `sedepulso-signup-routing`, se comparte entre los tre
 
 Las reglas no inspeccionan PII ni registran muestras de solicitudes. Es una regla de enrutamiento del registro, no una suite general de prevención de abuso. AWS WAF tiene cargos propios; compartir el ACL evita crear uno por ambiente.
 
-La asociación de cada pool vive en su stack de plataforma con parámetro `SignupWebAclArn`. El rol CFN tiene permisos de asociación sobre ese ACL y permiso Cognito sobre el pool etiquetado del ambiente. WAF exige recurso global para desasociar/consultar algunas asociaciones; el permiso dependiente de Cognito mantiene el límite del pool propio.
+La asociación de cada pool vive en su stack de plataforma con parámetro `SignupWebAclArn`. El rol CFN tiene permisos de asociación sobre ese ACL y los tres permisos dependientes de Cognito sobre el ARN exacto del pool propio. El bootstrap descubre el recurso `UserPool` del stack de cada ambiente y comprueba ARN, cuenta, región y tags Product/Environment antes de emitir esos permisos. No concede esos permisos cuando aún no existe el pool.
+
+La integración WAF → Cognito no entrega el contexto ResourceTag en esa autorización dependiente: el primer despliegue real de development y una prueba STS acotada confirmaron AccessDenied aun con tags correctos. Por eso no se usa `userpool/*` con tags para esas tres acciones. WAF exige recurso global para desasociar/consultar algunas asociaciones; el permiso dependiente exacto de Cognito conserva el límite del pool propio.
+
+La primera creación de un ambiente requiere dos fases: crear la plataforma con `SignupWebAclArn` vacío, volver a ejecutar el bootstrap administrador para descubrir y autorizar el ARN recién creado, y desplegar de nuevo con el ACL configurado. No publicar el frontend antes de terminar la asociación y las verificaciones. Al sustituir un pool en el futuro, repetir ese bootstrap; nunca ampliar el alcance a todos los pools para evitarlo.
+
+El 19 de noviembre de 2026 el primer deploy OIDC de development confirmó la federación, pero la asociación falló por ese contexto de tags ausente. El rollback intentó quitar las nuevas permissions boundaries y revertir atributos Cognito aditivos, ambas operaciones impedidas. Se completó conservando las boundaries y omitiendo únicamente `HealthFunctionRole`, `AccessFunctionRole`, `ConfigFunctionRole` y `UserPool`. La siguiente publicación debe realinear esos recursos con el template aprobado y restaurar los triggers de alta; no recrear el pool o las tablas ni habilitar la eliminación de boundaries para resolverlo.
 
 ## Cambios sólo de documentación
 

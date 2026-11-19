@@ -8,7 +8,7 @@ La primera versión cubre inventario, inspecciones manuales y evidencia textual.
 
 Angular 22 y NgRx SignalStore forman la interfaz. Angular SSR se sirve desde una Lambda Node.js 24 ARM64 detrás de CloudFront; los estáticos se sirven desde S3 privado. CloudFront usa Origin Access Control para ambos orígenes y dirige `/api/*` a API Gateway HTTP API. La Lambda SSR no tiene permisos DynamoDB.
 
-El backend se divide en microservicios con Lambdas, roles, tablas y stacks propios: plataforma y Access, Assets e Inspections. Los servicios resuelven pertenencia y rol invocando Access por IAM; Inspections valida el equipo invocando Assets. No comparten acceso directo a sus tablas. Cognito proporciona inicio de sesión con authorization code y PKCE, cliente público sin secreto y sin registro abierto.
+El backend se divide en microservicios con Lambdas, roles, tablas y stacks propios: plataforma y Access, Assets e Inspections. Los servicios resuelven pertenencia y rol invocando Access por IAM; Inspections valida el equipo invocando Assets. No comparten acceso directo a sus tablas. Cognito proporciona inicio de sesión con authorization code y PKCE, cliente público sin secreto y registro con correo verificado.
 
 | Ambiente | Rama | Dominio |
 | --- | --- | --- |
@@ -16,7 +16,13 @@ El backend se divide en microservicios con Lambdas, roles, tablas y stacks propi
 | testing | `testing` | `sedepulso-testing.lynxpardelle.com` |
 | production | `main` | `sedepulso.lynxpardelle.com` |
 
-Development está publicado y verificado en [sedepulso-development.lynxpardelle.com](https://sedepulso-development.lynxpardelle.com). Testing y producción siguen pendientes. El acceso operativo requiere usuarios de Cognito y sedes asignadas; no hay registro abierto. La evidencia y los límites de verificación se registran en el [plan](plan/feature-mantenimiento-1.md).
+Development está publicado y verificado en [sedepulso-development.lynxpardelle.com](https://sedepulso-development.lynxpardelle.com). Testing y producción siguen pendientes. La versión nueva añade registro público con correo confirmado y crea una organización con su primera sede; la publicación y verificación de cada ambiente se consulta en GitHub Actions. La evidencia y los límites de verificación se registran en el [plan](plan/feature-mantenimiento-1.md).
+
+## Registro y planes
+
+La landing explica el producto y compara los planes. `/registro` solicita organización, sede, zona horaria, correo y contraseña; después de confirmar el código recibido se crea un espacio propio con rol coordinador. Las pertenencias existentes se conservan y el cliente no elige roles ni organizaciones internas.
+
+Piloto está disponible gratuitamente en esta etapa, sin tarjeta ni cobros automáticos. Operación y Red están en diseño; precios y funciones adicionales deben validarse antes de venderse. Stripe no está integrado. Consulta la [propuesta de planes](docs/producto/planes-y-suscripciones.md) y el [contrato de registro](docs/contracts/registration.md).
 
 ## Desarrollo local
 
@@ -62,5 +68,7 @@ El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) e
 - [Marca y dominios](docs/branding.md).
 - [Promoción entre ambientes](docs/promocion.md).
 - [Operación y despliegue](docs/runbooks/despliegue.md).
+- [OIDC de GitHub Actions](docs/runbooks/ci-oidc.md).
+- [Recuperación de datos](docs/runbooks/recuperacion.md).
 
 La carpeta `mantenimiento-por-sede`, el origin `LynxPardelle/mantenimiento-por-sede` y el archivo del plan conservan sus identificadores históricos para mantener los enlaces y el proyecto remoto. La identidad visible y la infraestructura nueva usan **SedePulso** y `sedepulso`.

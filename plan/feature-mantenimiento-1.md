@@ -94,19 +94,19 @@ Los pasos técnicos que no requieren información del comprador pueden avanzar d
 | Pruebas/build de ampliación | 2026-11-19: 20/20 Node, 12/12 Angular; build SSR sin warnings; cfn-lint de cuatro templates y diff --check aprobados. Recorrido real en navegador local con recarga de historial, consola limpia y vista móvil sin desbordamiento. |
 | Publicación development y DNS | Cuatro stacks completos en us-east-1. HTTPS verificado en https://sedepulso-development.lynxpardelle.com; CloudFront ECQSEKLOPMF1Q. Release frontend/full 6165448df2efdb91, backend c66e9d4f286e0523. |
 | Smoke Cognito/IAM/DynamoDB | 2026-11-19 13:05 America/Mexico_City: 24 comprobaciones aprobadas con usuarios Cognito y persistencia DynamoDB; 3 identidades temporales y sus datos eliminados. |
-| CI con rol OIDC | Workflow preparado; consulta del 2026-11-19 confirma que AWS_DEPLOY_ROLE_ARN no está configurada en variables del repositorio. Sin ejecución remota acreditada. |
+| CI con rol OIDC | Bootstrap y variables por ambiente configurados; primera asunción real aprobada. TASK-013 registra el ajuste de permisos detectado antes de completar la publicación. |
 | Testing y producción | Pendientes; no inferirlos de development. |
 | Piloto real | Pendiente de operación participante, usuarios/sedes autorizados, cuatro semanas de métricas y decisión de renovación. Sin demanda validada. |
 
 ### Evidencia y límites de esta entrega
 
-- Base Git: `3fbd4162e8e811cca0bfcccd18c362fbfd4bacef`; rama local `feature/sedepulso-serverless`, con cambios sin commit ni push. Los artefactos registran `dirty=true` y hashes de los bytes publicados; no atribuir estos cambios al commit base.
+- Base Git: `3fbd4162e8e811cca0bfcccd18c362fbfd4bacef`; rama de implementación `feature/sedepulso-serverless`. La base se publicó en GitHub en `c54b955` y la ampliación de registro/OIDC en `2045774`, seguida de recuperación en `f503e6c`. Los artefactos de la primera entrega anterior al commit registraban cambios locales; se conserva ese contexto histórico. Los artefactos registran `dirty=true` y hashes de los bytes publicados; no atribuir estos cambios al commit base.
 - Stacks: `sedepulso-development-platform`, `sedepulso-development-assets`, `sedepulso-development-inspections` y `sedepulso-development-frontend`.
 - El navegador completó alta, programación, cierre e historial tras recargar contra la demostración local. La vista móvil no mostró desbordamiento; consola sin errores. En nube se verificó la página y la redirección real a Cognito con PKCE; el canje/callback está cubierto por pruebas Angular, y los tokens reales del smoke se obtuvieron mediante autenticación administrativa de identidades efímeras.
 - HTTPS, HTML SSR y JavaScript devolvieron `200`; acceso anónimo directo a Function URL y objeto S3 devolvió `403`.
 - Reportes locales ignorados: `infra/.artifacts/smoke-development.json`, `web-development.json`, `manifest.json` y `development.json`. Capturas: `test-results/sedepulso-public.jpg` y `sedepulso-mobile.jpg`.
 - Templates empaquetados y manifiesto se archivaron en el bucket privado versionado por ambiente/release/servicio. El despliegue verifica hashes antes de publicar.
-- Queda pendiente integrar/publicar la rama de trabajo, configurar y verificar OIDC de CI, promover development → testing → main, dar acceso a usuarios reales, elegir canal de alarmas y comprobar recuperación de datos antes del piloto.
+- La ampliación se integra y promueve mediante PR y GitHub Actions. Las verificaciones por ambiente y pendientes actuales se registran a continuación; el piloto comercial y el canal de avisos permanecen como decisiones de operación.
 
 ## 7. Riesgos y decisiones posteriores
 
@@ -122,3 +122,18 @@ Los pasos técnicos que no requieren información del comprador pueden avanzar d
 ## 8. Documentación relacionada
 
 [Producto](../PRODUCTO.md) · [Arquitectura](../docs/architecture/ARCHITECTURE.md) · [ADR](../docs/architecture/adr/0002-microservicios-y-angular-ssr.md) · [Marca](../docs/branding.md) · [Promoción](../docs/promocion.md) · [Runbook](../docs/runbooks/despliegue.md)
+
+## Ampliación de registro, planes y promoción (2026-11-19)
+
+| Tarea | Entrega | Evidencia/estado |
+| --- | --- | --- |
+| TASK-011 | Landing comercial con propuesta, casos de uso, FAQ y planes. | Implementada y cubierta por pruebas Angular; publicación por CI. |
+| TASK-012 | Registro, confirmación/reenvío y aprovisionamiento aislado. | 13 pruebas Node de onboarding; formularios y cliente Cognito probados. Confirmación real con correo autorizado se registra tras desplegar. |
+| TASK-013 | OIDC real y roles por ambiente, sin claves de larga duración. | Bootstrap `sedepulso-ci-oidc` configurado; asunción OIDC de development aprobada en run `44613457981`. Su primer deploy detectó permiso dependiente WAF/Cognito; recuperación/corrección en curso antes de promover. |
+| TASK-014 | Recuperación de Access mediante backup/restauración aislada. | Aprobada: marcador comparado, tabla/backup/marcador temporales eliminados. Ocho pruebas de guardas y linaje; alcance en runbook. |
+| TASK-015 | Propuesta Piloto, Operación y Red. | Documentada; sólo Piloto habilitado. Sin Stripe, precios, pagos ni conversión automática. |
+| TASK-016 | Promoción development → testing → main con verificaciones. | PR #8 integrado en development (`1be32cf`); se espera deploy/smokes verdes antes de los PR de promoción. |
+
+Fuentes de ejecución remota: [PR #8](https://github.com/LynxPardelle/mantenimiento-por-sede/pull/8), [Actions](https://github.com/LynxPardelle/mantenimiento-por-sede/actions/workflows/ci.yml) y artefactos JSON por ambiente. Un check de promoción valida el origen de la rama; la aceptación del ambiente exige el job de despliegue y sus tres comprobaciones.
+
+El ejercicio de recuperación del 2026-11-19 verificó un marcador en una copia de Access y terminó su limpieza a las 20:55:37 UTC; no acredita todavía recuperación coordinada de todos los dominios ni un RTO/RPO comercial.

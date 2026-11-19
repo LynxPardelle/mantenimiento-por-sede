@@ -10,7 +10,10 @@ Parameters:
     AllowedPattern: '^sedepulso(-development|-testing)?\.lynxpardelle\.com$'
   SignupWebAclArn:
     Type: String
+    Default: ''
     Description: ACL regional de SedePulso que dirige el registro Hosted UI a la aplicación.
+Conditions:
+  HasSignupWebAcl: !Not [!Equals [!Ref SignupWebAclArn, '']]
 Globals:
   Function:
     Runtime: nodejs24.x
@@ -77,6 +80,7 @@ Resources:
       UserPoolTags: {Product: sedepulso, Environment: !Ref Environment}
   SignupWebAclAssociation:
     Type: AWS::WAFv2::WebACLAssociation
+    Condition: HasSignupWebAcl
     Properties:
       ResourceArn: !GetAtt UserPool.Arn
       WebACLArn: !Ref SignupWebAclArn

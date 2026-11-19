@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildCiTemplate } from '../ci/template.mjs';
+import { discoverUserPools } from '../ci/pools.mjs';
 import { aws, stackOutputs } from './aws.mjs';
 
 const region = 'us-east-1';
@@ -26,7 +27,8 @@ if (providerExists) {
 }
 const zone = aws(['route53', 'list-hosted-zones-by-name', '--dns-name', 'lynxpardelle.com', '--max-items', '2']).HostedZones.find(({ Name, Config }) => Name === 'lynxpardelle.com.' && !Config.PrivateZone);
 if (!zone) throw new Error('No existe la zona pública lynxpardelle.com.');
-const template = buildCiTemplate({ account, providerArn, hostedZoneId: zone.Id.split('/').at(-1), subjectPrefix, region });
+const userPoolArns = discoverUserPools(aws, { account, region });
+const template = buildCiTemplate({ account, providerArn, hostedZoneId: zone.Id.split('/').at(-1), subjectPrefix, region, userPoolArns });
 await mkdir(out, { recursive: true });
 const templatePath = join(out, 'ci-template.json');
 await writeFile(templatePath, JSON.stringify(template, null, 2) + '\n');
@@ -58,7 +60,8 @@ for (const [environment, branch] of [['development', 'development'], ['testing',
   gh(['variable', 'set', 'AWS_DEPLOY_ROLE_ARN', '--repo', repository, '--env', environment, '--body', deployRole]);
   gh(['variable', 'set', 'CLOUDFORMATION_ROLE_ARN', '--repo', repository, '--env', environment, '--body', cloudFormationRole]);
   gh(['variable', 'set', 'SIGNUP_WEB_ACL_ARN', '--repo', repository, '--env', environment, '--body', outputs.SignupWebAclArn]);
-  summary.push({ environment, branch, deployRole, cloudFormationRole, runtimeBoundary: outputs[id + 'RuntimeBoundaryArn'] });
+  gh(['variable', 'set', 'COGNITO_WAF_POOL_READY', '--repo', repository, '--env', environment, '--body', String(Boolean(userPoolArns[environment]))]);
+  summary.push({ environment, branch, deployRole, cloudFormationRole, runtimeBoundary: outputs[id + 'RuntimeBoundaryArn'], wafUserPoolArn: userPoolArns[environment] || null });
 }
 await writeFile(join(out, 'ci-oidc.json'), JSON.stringify({ repository, subjectPrefix, region, providerArn, signupWebAclArn: outputs.SignupWebAclArn, stack: 'sedepulso-ci-oidc', environments: summary }, null, 2) + '\n');
 console.log(JSON.stringify({ repository, subjectPrefix, providerArn, signupWebAclArn: outputs.SignupWebAclArn, stack: 'sedepulso-ci-oidc', environments: summary }, null, 2));

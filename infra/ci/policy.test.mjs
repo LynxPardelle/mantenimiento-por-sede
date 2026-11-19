@@ -4,6 +4,19 @@ import { buildCiTemplate } from './template.mjs';
 
 const template = buildCiTemplate({ account: '123456789012', providerArn: 'arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com', hostedZoneId: 'Z123456' });
 const cfnStatements = (id) => template.Resources[id + 'CloudFormationRole'].Properties.ManagedPolicyArns.flatMap(({ Ref }) => template.Resources[Ref].Properties.PolicyDocument.Statement);
+
+test('WAF Cognito permissions use discovered exact pool ARNs and fail closed before bootstrap', () => {
+  assert.ok(!cfnStatements('Testing').some(({ Sid }) => Sid === 'OwnPoolWafAssociation'));
+  const arn = 'arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_Dev123';
+  const scoped = buildCiTemplate({ account: '123456789012', providerArn: 'provider', hostedZoneId: 'Z123456', userPoolArns: { development: arn } });
+  const statements = scoped.Resources.DevelopmentCloudFormationRole.Properties.ManagedPolicyArns.flatMap(({ Ref }) => scoped.Resources[Ref].Properties.PolicyDocument.Statement);
+  const permission = statements.find(({ Sid }) => Sid === 'OwnPoolWafAssociation');
+  assert.equal(permission.Resource, arn);
+  assert.equal(permission.Condition, undefined);
+  assert.deepEqual(permission.Action, ['cognito-idp:AssociateWebACL', 'cognito-idp:DisassociateWebACL', 'cognito-idp:GetWebACLForResource']);
+  assert.throws(() => buildCiTemplate({ account: '123456789012', providerArn: 'provider', hostedZoneId: 'Z123456', userPoolArns: { development: arn.replace('123456789012', '999999999999') } }), /ARN/);
+  assert.throws(() => buildCiTemplate({ account: '123456789012', providerArn: 'provider', hostedZoneId: 'Z123456', userPoolArns: { development: arn, testing: arn } }), /propio UserPool/);
+});
 test('OIDC trust is exact for repository, environment and STS audience', () => {
   for (const environment of ['development', 'testing', 'production']) {
     const id = environment[0].toUpperCase() + environment.slice(1);

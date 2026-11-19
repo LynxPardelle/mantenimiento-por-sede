@@ -54,4 +54,15 @@ Un resultado satisfactorio acredita la recuperación del marcador en una copia d
 
 Al restaurar para una recuperación operativa, se deben preparar explícitamente las configuraciones asociadas a la tabla, como TTL, streams, alarmas, IAM y políticas de escalado. La prueba no cambia esas configuraciones de la fuente ni conecta la tabla temporal a la aplicación.
 
+## Ejecución verificada el 2026-11-19
+
+- Segunda ejecución: `status=succeeded`, marcador restaurado comparado con el valor esperado y tres comprobaciones de limpieza aprobadas.
+- Verificación del marcador: `2026-11-19T20:55:06Z`; final de limpieza: `2026-11-19T20:55:37Z`.
+- Duración total observada: 312 segundos, incluyendo backup, restauración y limpieza. Es una medición de este ejercicio, no un compromiso de RTO.
+- Ocho pruebas Node de guardas, fallos y metadata opcional aprobadas.
+- El primer intento detectó la omisión real de `RestoreSummary` y se detuvo antes de afirmar integridad. Se conservó su informe, se acreditó la tabla propia mediante CloudTrail/cuenta/ARN/fecha/`TableId` y se completó su limpieza. La integridad se acredita exclusivamente con la segunda ejecución, con nonce y valor nuevos.
+- Contando ambos intentos, se solicitaron dos backups bajo demanda y dos restauraciones. Ambos backups, ambas tablas temporales y ambos marcadores fuente quedaron eliminados. El importe monetario final no se consultó ni se estimó.
+
+Los informes detallados permanecen en los archivos ignorados `infra/.artifacts/recovery-development.json` y `recovery-development-first-attempt.json`.
+
 Referencias: [restaurar desde backup con AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/dynamodb/restore-table-from-backup.html), [campos opcionales de RestoreSummary](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_RestoreSummary.html), [backup bajo demanda](https://docs.aws.amazon.com/cli/latest/reference/dynamodb/create-backup.html) y [backup y restauración en DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStartedBackupsAWS.html).

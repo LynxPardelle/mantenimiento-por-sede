@@ -67,9 +67,14 @@ async function selected(name, template, parameters) {
   reports[name] = stackOutputs(`${prefix}-${name}`, region);
   return reports[name];
 }
-const signupWebAclArn = process.env.SIGNUP_WEB_ACL_ARN || stackOutputs('sedepulso-ci-oidc', region).SignupWebAclArn;
-if (!signupWebAclArn) throw new Error('Configura la ACL de registro con node infra/tools/configure-ci.mjs.');
+const poolReady = process.env.COGNITO_WAF_POOL_READY;
+if (!['true', 'false'].includes(poolReady)) throw new Error('Ejecuta configure-ci.mjs y usa COGNITO_WAF_POOL_READY=true|false del ambiente.');
+const bootstrapPlatform = poolReady === 'false';
+if (bootstrapPlatform && !['all', 'platform'].includes(service)) throw new Error('Primero crea la plataforma y vincula el pool exacto con configure-ci.mjs.');
+const signupWebAclArn = bootstrapPlatform ? '' : (process.env.SIGNUP_WEB_ACL_ARN || stackOutputs('sedepulso-ci-oidc', region).SignupWebAclArn);
+if (!bootstrapPlatform && !signupWebAclArn) throw new Error('Configura la ACL de registro con node infra/tools/configure-ci.mjs.');
 const platform = await selected('platform', 'template.yaml', { Environment: environment, AppHost: host, SignupWebAclArn: signupWebAclArn });
+if (bootstrapPlatform) throw new Error('Plataforma inicial creada sin asociación WAF. Ejecuta configure-ci.mjs para autorizar su pool exacto y reejecuta este workflow antes de publicar servicios o frontend.');
 const shared = { Environment: environment, ApiId: platform.ApiId, AuthorizerId: platform.AuthorizerId, AccessFunctionName: platform.AccessFunctionName, AccessFunctionArn: platform.AccessFunctionArn };
 if (['all', 'assets', 'inspections'].includes(service)) {
 const assets = await selected('assets', 'services/assets.yaml', shared);
