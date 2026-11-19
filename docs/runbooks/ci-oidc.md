@@ -47,6 +47,10 @@ Algunos servicios asignan identificadores aleatorios o exigen `Resource: *` para
 
 La verificación puede crear y eliminar identidades Cognito y datos efímeros en el ambiente. Los scripts usan nombres de prueba, suprimen invitaciones y limpian al terminar; no deben migrar información de clientes entre ambientes.
 
+HTTP API V2 presenta una discrepancia entre el catálogo IAM y el proveedor real: `AWS::ApiGatewayV2::Stage` declara `apigateway:TagResource` para crear el stage y la primera creación de testing lo exigió literalmente, aun con los verbos GET/POST/PUT/PATCH/DELETE ya permitidos. Una API temporal sin rutas y una sesión STS limitada a su ARN confirmaron que añadir únicamente ese permiso permite CreateStage con tags; la API se eliminó al terminar. Cada rol CFN recibe una managed policy separada con sólo esa acción sobre `/apis/*/stages` y sus hijos, en us-east-1. Como el catálogo público y cfn-lint la consideran inválida, se omite W3037 exclusivamente en esos tres recursos IAM, sin ignorar lint global ni añadir `apigateway:*`. No se añade UntagResource sin un caso que lo requiera.
+
+El primer intento de testing quedó en ROLLBACK_COMPLETE antes de crear el pool. La tabla AccessTable recién creada se conservó por Retain, vacía y sin mutaciones; la metadata del stack fallido se puede retirar tras comprobar que no quedan otros recursos activos. Registrar esa tabla retenida para revisión posterior, sin borrarla como parte de la recuperación.
+
 ## Registro de Cognito
 
 Un único WebACL regional, `sedepulso-signup-routing`, se comparte entre los tres pools. Tiene tres reglas: método GET, path exacto `/signup` y header Host exacto del dominio Cognito del ambiente. La acción es HTTP302 con `Location` a `/registro` del host del producto correspondiente. El default es Allow: no intercepta `/`, `/login`, `/oauth2/token`, recuperación de contraseña ni los POST.
@@ -92,3 +96,4 @@ Crear los roles no prueba la federación completa. La evidencia de asunción OID
 - [GitHub: variables de environment y contextos](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts).
 - [AWS Cognito: respuestas y asociación WAF](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-waf.html).
 - [AWS: autorización de API Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/security_iam_service-with-iam.html).
+- [CloudFormation cfn-lint: discrepancia del catálogo para tagging de API Gateway](https://github.com/aws-cloudformation/cfn-lint/issues/4280).
