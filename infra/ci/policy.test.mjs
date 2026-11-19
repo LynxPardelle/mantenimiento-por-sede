@@ -5,6 +5,19 @@ import { buildCiTemplate } from './template.mjs';
 const template = buildCiTemplate({ account: '123456789012', providerArn: 'arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com', hostedZoneId: 'Z123456' });
 const cfnStatements = (id) => template.Resources[id + 'CloudFormationRole'].Properties.ManagedPolicyArns.flatMap(({ Ref }) => template.Resources[Ref].Properties.PolicyDocument.Statement);
 
+test('HTTP API stage creation receives only its demonstrated literal tagging permission', () => {
+  for (const environment of ['development', 'testing', 'production']) {
+    const id = environment[0].toUpperCase() + environment.slice(1);
+    const stagePolicy = template.Resources[id + 'ApiStageTaggingPolicy'];
+    assert.ok(stagePolicy, 'The HTTP API V2 CreateStage permission is required by the live provider');
+    assert.deepEqual(stagePolicy.Properties.PolicyDocument.Statement[0].Action, ['apigateway:TagResource']);
+    assert.deepEqual(stagePolicy.Properties.PolicyDocument.Statement[0].Resource, ['arn:aws:apigateway:us-east-1::/apis/*/stages', 'arn:aws:apigateway:us-east-1::/apis/*/stages/*']);
+    assert.deepEqual(stagePolicy.Metadata['cfn-lint'].config.ignore_checks, ['W3037']);
+    assert.ok(template.Resources[id + 'CloudFormationRole'].Properties.ManagedPolicyArns.some(({ Ref }) => Ref === id + 'ApiStageTaggingPolicy'));
+  }
+  assert.ok(!template.Metadata, 'The lint exception must never be global');
+});
+
 test('WAF Cognito permissions use discovered exact pool ARNs and fail closed before bootstrap', () => {
   assert.ok(!cfnStatements('Testing').some(({ Sid }) => Sid === 'OwnPoolWafAssociation'));
   const arn = 'arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_Dev123';
