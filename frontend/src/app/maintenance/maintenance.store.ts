@@ -201,7 +201,10 @@ export const MaintenanceStore = signalStore(
           );
           idempotency.delete(operation);
           if (current !== generation) return false;
+          readGeneration++;
           patchState(store, {
+            loading: false,
+            error: '',
             assets: uniqueById([asset, ...store.assets()]),
             notice: 'Equipo registrado. Ya puedes programar su primera inspección.',
           });
@@ -230,7 +233,10 @@ export const MaintenanceStore = signalStore(
           );
           idempotency.delete(operation);
           if (current !== generation) return false;
+          readGeneration++;
           patchState(store, {
+            loading: false,
+            error: '',
             pending:
               dueDate <= store.dueThrough()
                 ? uniqueById([inspection, ...store.pending()])
@@ -260,7 +266,10 @@ export const MaintenanceStore = signalStore(
             ),
           );
           if (current !== generation) return false;
+          readGeneration++;
           patchState(store, {
+            loading: false,
+            error: '',
             pending: store.pending().filter((item) => item.id !== inspection.id),
             notice:
               'Inspección completada. El historial se consulta de nuevo para confirmar el registro.',

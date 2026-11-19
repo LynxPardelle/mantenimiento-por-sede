@@ -94,6 +94,8 @@ Un `200` de salud sólo verifica Health. No confirma autorización, tablas o ren
 
 ## CI, promoción y operación
 
+Las alarmas Lambda detectan fallos de invocación. La alarma `ApiServerErrors` usa `AWS/ApiGateway`, métrica HTTP API `5xx`, dimensión `ApiId`, suma de cinco minutos y umbral de un error. Incluye las respuestas 500 manejadas por Access, Assets e Inspections que no incrementan Lambda Errors. Consultar el estado de alarma y los access logs por requestId/ruta/status; no registrar cuerpos, tokens o datos personales para diagnosticar. Referencia: [métricas oficiales de HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-metrics.html). Su configuración no acredita una prueba de fallo real ni entrega de notificaciones; el canal y destinatario siguen pendientes de decisión operativa.
+
 Configurar un rol OIDC de alcance mínimo y `AWS_DEPLOY_ROLE_ARN` para GitHub Actions. Mientras no esté verificado, distinguir CI de pruebas de un pipeline capaz de publicar. Seguir [development → testing → main](../promocion.md): testing usa `sedepulso-testing.lynxpardelle.com`; producción, `sedepulso.lynxpardelle.com`.
 
 Los logs tienen retención de 14 días. Las alarmas de errores requieren definir canal y destinatario para entregar avisos. El ejercicio de recuperación de Access en development pasó el 2026-11-19: comparó un marcador restaurado con su valor esperado y comprobó la eliminación de tabla, backup y marcador temporales. El [runbook de recuperación](recuperacion.md) conserva alcance y evidencia. La recuperación coordinada de inventario, inspecciones, identidad y estáticos, así como RTO/RPO comerciales, todavía no está acreditada.
