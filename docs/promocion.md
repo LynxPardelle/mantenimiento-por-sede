@@ -32,6 +32,6 @@ Identidades y datos de demostración no se trasladan a producción como datos de
 
 ## Comprobar controles
 
-En el PR, verificar check de promoción y CI. Revisar Settings → Rules → Rulesets y Settings → Environments para confirmar reglas y ramas. La conexión OIDC pendiente y el estado de ambientes se registran en el [plan](../plan/feature-mantenimiento-1.md). El [runbook](runbooks/despliegue.md) describe la operación.
+En el PR, verificar check de promoción y CI. Revisar Settings → Rules → Rulesets y Settings → Environments para confirmar reglas y ramas. La conexión OIDC y las tres publicaciones quedaron verificadas el 2026-11-19; el estado y los límites se registran en el [plan](../plan/feature-mantenimiento-1.md) y el [cierre de entrega](releases/2026-11-19-sedepulso.md). El [runbook](runbooks/despliegue.md) describe la operación.
 
 [Rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets) · [Ambientes GitHub](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)

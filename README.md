@@ -16,7 +16,7 @@ El backend se divide en microservicios con Lambdas, roles, tablas y stacks propi
 | testing | `testing` | `sedepulso-testing.lynxpardelle.com` |
 | production | `main` | `sedepulso.lynxpardelle.com` |
 
-Development está publicado y verificado en [sedepulso-development.lynxpardelle.com](https://sedepulso-development.lynxpardelle.com). Testing y producción siguen pendientes. La versión nueva añade registro público con correo confirmado y crea una organización con su primera sede; la publicación y verificación de cada ambiente se consulta en GitHub Actions. La evidencia y los límites de verificación se registran en el [plan](plan/feature-mantenimiento-1.md).
+Los tres ambientes están publicados y verificados: [development](https://sedepulso-development.lynxpardelle.com), [testing](https://sedepulso-testing.lynxpardelle.com) y [producción](https://sedepulso.lynxpardelle.com). OIDC, cuatro stacks y tres smokes pasaron por ambiente; el registro confirmó correos reales y creó espacios aislados, con limpieza de las cuentas temporales. En producción también se verificaron login PKCE/callback, sede asignada, recarga y logout en navegador. Consulta el [cierre de entrega y runs](docs/releases/2026-11-19-sedepulso.md) y el [plan](plan/feature-mantenimiento-1.md) para evidencia y límites.
 
 ## Registro y planes
 
@@ -69,6 +69,7 @@ El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) e
 - [Producto y piloto](PRODUCTO.md).
 - [Arquitectura y contratos](docs/architecture/ARCHITECTURE.md).
 - [Plan y evidencia](plan/feature-mantenimiento-1.md).
+- [Entrega verificada del 2026-11-19](docs/releases/2026-11-19-sedepulso.md).
 - [Marca y dominios](docs/branding.md).
 - [Promoción entre ambientes](docs/promocion.md).
 - [Operación y despliegue](docs/runbooks/despliegue.md).
