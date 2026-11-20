@@ -16,7 +16,7 @@ El backend se divide en microservicios con Lambdas, roles, tablas y stacks propi
 | testing | `testing` | `sedepulso-testing.lynxpardelle.com` |
 | production | `main` | `sedepulso.lynxpardelle.com` |
 
-Los tres ambientes están publicados y verificados: [development](https://sedepulso-development.lynxpardelle.com), [testing](https://sedepulso-testing.lynxpardelle.com) y [producción](https://sedepulso.lynxpardelle.com). OIDC, cuatro stacks y tres smokes pasaron por ambiente; el registro confirmó correos reales y creó espacios aislados, con limpieza de las cuentas temporales. En producción también se verificaron login PKCE/callback, sede asignada, recarga y logout en navegador. Consulta el [cierre de entrega y runs](docs/releases/2026-11-19-sedepulso.md) y el [plan](plan/feature-mantenimiento-1.md) para evidencia y límites.
+Los tres ambientes publican la inscripción del piloto: [development](https://sedepulso-development.lynxpardelle.com), [testing](https://sedepulso-testing.lynxpardelle.com) y [producción](https://sedepulso.lynxpardelle.com). En cada uno se verificaron OIDC, cinco stacks, 41 comprobaciones de dominio, cinco de registro y web/orígenes privados, con limpieza de datos e identidades técnicas. Los reportes privados coincidieron con su commit/run, once alarmas OK y facturación deshabilitada. Consulta el [cierre de onboarding y runs](docs/releases/2026-11-19-onboarding-piloto.md) y el [plan](plan/feature-mantenimiento-1.md). La [entrega anterior](docs/releases/2026-11-19-sedepulso.md) conserva la comprobación de correo real y login PKCE/callback en navegador de producción; el nuevo formulario se verificó en navegador local y por API en los tres ambientes.
 
 ## Registro y planes
 
@@ -24,7 +24,7 @@ La landing explica el producto y compara los planes. `/registro` solicita organi
 
 Piloto está disponible gratuitamente en esta etapa, sin tarjeta ni cobros automáticos. Operación y Red están en diseño; precios y funciones adicionales deben validarse antes de venderse. Stripe no está integrado. Consulta la [propuesta de planes](docs/producto/planes-y-suscripciones.md), la [guía de piloto de cuatro semanas](docs/producto/piloto-operativo.md) y el [contrato de registro](docs/contracts/registration.md).
 
-La ampliación de onboarding añade `/app/piloto`, accesible desde la operación para coordinación. Permite guardar un borrador privado y confirmar alcance de una sede, fecha, objetivos, consultas medidas y esfuerzo inicial. La confirmación exige tres acuerdos explícitos y fija la versión de comparación. La inscripción entra automáticamente al observador sin editar S3; las pruebas técnicas permanecen separadas de participantes reales. Su publicación está en verificación; véase el [contrato del piloto](docs/contracts/pilot-enrollment.md).
+El onboarding publicado añade `/app/piloto`, accesible desde la operación para coordinación. Permite guardar un borrador privado y confirmar alcance de una sede, fecha, objetivos, consultas medidas y esfuerzo inicial durante siete días locales completos. La confirmación exige tres acuerdos explícitos y fija la versión de comparación. La inscripción entra automáticamente al observador sin editar S3; las pruebas técnicas permanecen separadas de participantes reales. Véase el [contrato del piloto](docs/contracts/pilot-enrollment.md).
 
 ## Desarrollo local
 
@@ -74,6 +74,7 @@ El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) e
 - [Plan y evidencia](plan/feature-mantenimiento-1.md).
 - [Entrega verificada del 2026-11-19](docs/releases/2026-11-19-sedepulso.md).
 - [TASK-006: métricas y seguimiento publicados](docs/releases/2026-11-19-piloto.md).
+- [TASK-020: onboarding y línea base publicados](docs/releases/2026-11-19-onboarding-piloto.md).
 - [Marca y dominios](docs/branding.md).
 - [Promoción entre ambientes](docs/promocion.md).
 - [Operación y despliegue](docs/runbooks/despliegue.md).

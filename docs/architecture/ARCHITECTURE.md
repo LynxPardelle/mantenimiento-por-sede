@@ -6,7 +6,7 @@ La persona coordinadora administra equipos e inspecciones por sede; la persona t
 
 La arquitectura usa microservicios serverless AWS y Angular servido por Lambda. Cada servicio de dominio tiene función, rol IAM y tabla DynamoDB propios. Los stacks permiten actualizar un servicio sin redesplegar los demás cuando se conserva el contrato. La separación no consiste sólo en dividir archivos dentro de una Lambda.
 
-La ampliación de inscripción desde la app está implementada; su publicación en los tres ambientes está en verificación. Incorpora Pilot como quinto stack de aplicación. Los cierres históricos conservan la evidencia de la arquitectura anterior.
+La inscripción desde la app está publicada y verificada en los tres ambientes: [cierre de onboarding](../releases/2026-11-19-onboarding-piloto.md). Incorpora Pilot como quinto stack de aplicación. Los cierres históricos conservan la evidencia de la arquitectura anterior.
 
 ## Componentes y propiedad
 

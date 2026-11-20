@@ -1,6 +1,6 @@
 # Piloto operativo de SedePulso: cuatro semanas
 
-Guía para TASK-006. La inscripción y captura de línea base desde la app están implementadas; su publicación en los tres ambientes está en verificación. Esta guía no registra participantes, precio ni aceptación comercial. La ventana de una operación comienza en la fecha local acordada al inscribirse; las pruebas técnicas no cuentan como participantes.
+Guía para TASK-006. La inscripción y captura de línea base desde la app están publicadas y verificadas en los tres ambientes: [cierre de onboarding](../releases/2026-11-19-onboarding-piloto.md). Esta guía no registra participantes, precio ni aceptación comercial. La ventana de una operación comienza en la fecha local acordada al inscribirse; las pruebas técnicas no cuentan como participantes.
 
 ## Inscribir una operación desde la app
 
@@ -32,7 +32,7 @@ Conservar la línea base en Pilot mediante la app y los seguimientos semanales e
 
 ## Instrumentación y seguimiento preparados
 
-El cálculo del piloto y el colector operacional están implementados en `infra/pilot/`; `infra/tools/observe-pilot.mjs` comprueba salud, Stripe deshabilitado, stacks, tablas y alarmas antes de persistir agregados privados. La entrega anterior fue verificada en los tres ambientes: [cierre técnico](../releases/2026-11-19-piloto.md). La nueva ampliación a cinco stacks, once alarmas e inscripción desde la app está implementada y su publicación está en verificación; no acredita un piloto comercial en marcha.
+El cálculo del piloto y el colector operacional están implementados en `infra/pilot/`; `infra/tools/observe-pilot.mjs` comprueba salud, Stripe deshabilitado, stacks, tablas y alarmas antes de persistir agregados privados. La entrega anterior se conserva en su [cierre técnico](../releases/2026-11-19-piloto.md). La ampliación a cinco stacks, once alarmas e inscripción desde la app fue publicada y verificada en los tres ambientes; no acredita un piloto comercial en marcha.
 
 El workflow `piloto.yml` define observación diaria de producción a las 07:17 GMT-6, con ejecución manual y rol OIDC separado del despliegue y del runtime del producto. El heartbeat local de este chat `sedepulso-seguimiento-del-piloto` está activo a las 08:00 GMT-6 para revisar resultados y pendientes, sin SLA. Cada revisión comprueba una frescura máxima de 26 horas. Fallos del observador aparecen en GitHub Actions; no se envían correos desde este flujo. Alarmas sin canal de notificación no prueban entrega de avisos.
 
