@@ -1,0 +1,282 @@
+:host {
+  display: block;
+}
+.pilot-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 25rem) minmax(0, 46rem);
+  gap: clamp(2rem, 6vw, 6rem);
+  max-width: 83rem;
+  margin: auto;
+  padding: 3.5rem clamp(1.25rem, 4vw, 4rem) 5rem;
+}
+.pilot-intro h1 {
+  font-size: clamp(2.6rem, 4.2vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.055em;
+  font-weight: 500;
+  margin: 1.3rem 0;
+}
+.pilot-intro em {
+  font-family: Georgia, serif;
+  color: var(--green);
+}
+.pilot-intro > p:not(.eyebrow),
+.description,
+.pilot-panel > p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+.pilot-facts {
+  border-block: 1px solid var(--line);
+  margin: 2rem 0;
+}
+.pilot-facts p {
+  display: flex;
+  gap: 1rem;
+}
+.pilot-facts strong {
+  min-width: 5.5rem;
+  color: var(--green);
+  font-size: 0.9rem;
+}
+.pilot-facts span {
+  font-size: 0.78rem;
+}
+.pilot-panel {
+  min-width: 0;
+  border-top: 2px solid var(--green);
+  padding-top: 1.4rem;
+}
+.site-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.site-heading h2 {
+  margin: 0.4rem 0;
+}
+.site-heading p:last-child {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.site-heading .field {
+  max-width: 13rem;
+  margin: 0;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0;
+  list-style: none;
+  margin: 1.5rem 0 2rem;
+  border-bottom: 1px solid var(--line);
+}
+.steps button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: start;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0.8rem 0.3rem;
+  background: none;
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.73rem;
+  cursor: pointer;
+}
+.steps .active {
+  color: var(--green);
+  border-color: var(--green);
+  font-weight: 650;
+}
+.field {
+  margin: 1.2rem 0;
+}
+.field label,
+legend {
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.field input,
+.field textarea,
+.field select {
+  font-size: 0.9rem;
+}
+.pilot-panel small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.65;
+  margin-top: 0.4rem;
+}
+.field-grid,
+.effort-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.effort-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+.help-note,
+.technical-notice {
+  padding: 1rem;
+  border-left: 2px solid var(--green);
+  background: var(--green-soft);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 2rem 0;
+}
+fieldset > p {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.attempt-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem 0.8rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.8rem;
+}
+.attempt-row > strong {
+  grid-column: 1/-1;
+  font-size: 0.75rem;
+}
+.attempt-row .field {
+  margin: 0.6rem 0 1rem;
+}
+.review-summary > div {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: 1rem;
+  border-top: 1px solid var(--line);
+  padding: 1rem 0;
+}
+.review-summary dt {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.review-summary dd {
+  margin: 0;
+  font-size: 0.87rem;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.agreements label {
+  display: flex;
+  align-items: start;
+  gap: 0.8rem;
+  margin: 1.1rem 0;
+  font-size: 0.84rem;
+  line-height: 1.65;
+}
+.agreements input {
+  width: 1.1rem;
+  min-height: 1.1rem;
+  margin-top: 0.25rem;
+  accent-color: var(--green);
+  flex-shrink: 0;
+}
+.confirm {
+  width: 100%;
+  margin: 0.8rem 0 1.2rem;
+}
+.pilot-actions,
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.pilot-actions {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+.pilot-actions > span,
+.reload {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.step-actions .button:last-child {
+  margin-left: auto;
+}
+.enrolled-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 2rem 0 1rem;
+}
+.enrolled-heading > span {
+  font-size: 2rem;
+  color: var(--green);
+}
+.cohort-code {
+  overflow-wrap: anywhere;
+}
+.cohort-code strong {
+  display: block;
+  color: var(--green);
+}
+.message ul {
+  padding-left: 1.2rem;
+  font-size: 0.8rem;
+}
+@media (max-width: 850px) {
+  .pilot-layout {
+    grid-template-columns: 1fr;
+    padding-top: 2rem;
+    gap: 2rem;
+  }
+  .pilot-intro {
+    max-width: 36rem;
+  }
+  .pilot-intro h1 {
+    font-size: 2.8rem;
+  }
+}
+@media (max-width: 480px) {
+  .site-header {
+    padding-inline: 1.25rem;
+  }
+  .site-header .brand {
+    font-size: 1.4rem;
+  }
+  .site-header > .text-link {
+    font-size: 0.69rem;
+  }
+  .steps button {
+    font-size: 0.65rem;
+  }
+  .site-heading {
+    flex-direction: column;
+  }
+  .field-grid,
+  .effort-grid,
+  .review-summary > div {
+    grid-template-columns: 1fr;
+  }
+  .review-summary > div {
+    gap: 0.4rem;
+  }
+  .attempt-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .attempt-row .remove {
+    grid-column: 1/-1;
+    margin-bottom: 1rem;
+  }
+  .pilot-actions {
+    align-items: start;
+    flex-direction: column;
+  }
+}

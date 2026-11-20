@@ -47,7 +47,7 @@ export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPre
     const functions = `arn:aws:lambda:${region}:${account}:function:${prefix}*`;
     const tables = `arn:aws:dynamodb:${region}:${account}:table/${prefix}*`;
     const runtimeRoles = `arn:aws:iam::${account}:role/${prefix}*`;
-    const stacks = ['platform', 'assets', 'inspections', 'frontend'].map((name) => `arn:aws:cloudformation:${region}:${account}:stack/${prefix}${name}/*`);
+    const stacks = ['platform', 'assets', 'inspections', 'pilot', 'frontend'].map((name) => `arn:aws:cloudformation:${region}:${account}:stack/${prefix}${name}/*`);
     const transform = `arn:aws:cloudformation:${region}:aws:transform/Serverless-2016-10-31`;
     const pool = `arn:aws:cognito-idp:${region}:${account}:userpool/*`;
     const poolTags = { StringEquals: { 'aws:ResourceTag/Product': 'sedepulso', 'aws:ResourceTag/Environment': environment } };
@@ -180,6 +180,7 @@ export function buildCiTemplate({ account, providerArn, hostedZoneId, subjectPre
             statement('SmokeData', ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:DeleteItem', 'dynamodb:Query'], [tables, tables + '/index/*']),
             statement('VerifyPrivateLambdaUrl', 'lambda:GetFunctionUrlConfig', functions),
             statement('VerifySignupTrigger', 'lambda:InvokeFunction', `arn:aws:lambda:${region}:${account}:function:${prefix}*PostConfirmation*`),
+            statement('VerifyPilotRegistryExport', 'lambda:InvokeFunction', `arn:aws:lambda:${region}:${account}:function:${prefix}pilot-PilotExportFunction-*`),
           ]),
         }],
         Tags: [{ Key: 'Product', Value: 'sedepulso' }, { Key: 'Environment', Value: environment }],

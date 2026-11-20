@@ -16,7 +16,7 @@ export function createAccessHandler({ repository }) {
     const site = sites.find((entry) => entry.id === siteId);
     if (!site) fail(404, 'not_found');
     if (event.allowedRoles && (!Array.isArray(event.allowedRoles) || !event.allowedRoles.includes(site.role))) fail(403, 'forbidden');
-    return response(200, { orgId: identifier(membership.orgId, 'organization'), site });
+    return response(200, { orgId: identifier(membership.orgId, 'organization'), site, dataClass: membership.dataClass === 'technical' ? 'technical' : 'unclassified' });
   });
 }
 

@@ -56,6 +56,24 @@ test('self-service signup rejects missing, oversized, invalid or privileged attr
   }
 });
 
+test('signup accepts named IANA zones and rejects fixed UTC offsets before provisioning a workspace', async () => {
+  const { signupProfile, createPreSignUpHandler, createPostConfirmationHandler } = await implementation();
+  for (const zone of ['UTC', 'Etc/GMT+6', 'America/Mexico_City']) {
+    assert.equal(signupProfile({ ...attributes, 'custom:timeZone': zone }).timeZone, zone);
+  }
+  for (const zone of ['+05:30', '-06:00', '+0530']) {
+    assert.throws(() => signupProfile({ ...attributes, 'custom:timeZone': zone }), /signup_invalid_time_zone/);
+    const input = event('PreSignUp_SignUp');
+    input.request.userAttributes['custom:timeZone'] = zone;
+    await assert.rejects(createPreSignUpHandler()(input), /signup_invalid_time_zone/);
+    const repo = repository();
+    const confirmed = event('PostConfirmation_ConfirmSignUp');
+    confirmed.request.userAttributes['custom:timeZone'] = zone;
+    await assert.rejects(createPostConfirmationHandler({ repository: repo })(confirmed), /signup_invalid_time_zone/);
+    assert.equal(repo.creations.length, 0);
+  }
+});
+
 test('IAM administrator creation remains compatible while external federation fails closed', async () => {
   const { createPreSignUpHandler } = await implementation();
   const handler = createPreSignUpHandler();
