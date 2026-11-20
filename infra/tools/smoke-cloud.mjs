@@ -7,6 +7,7 @@ import { aws, stackOutputs } from './aws.mjs';
 import { collectCohort } from '../pilot/collect.mjs';
 import { summarizePilot } from '../pilot/metrics.mjs';
 import { verifyPilotEnrollment, removeTechnicalPilot } from './pilot-smoke.mjs';
+import { verifyWeeklyReviews } from './weekly-smoke.mjs';
 
 // Only disposable identities/data in a fresh smoke namespace; never tenant data.
 const args = process.argv.slice(2);
@@ -80,6 +81,7 @@ try {
   assert.equal(expect(await api('/api/v1/sites', { token: coordinator.token }), 200, 'sedes del coordinador').items.length, 2);
   assert.equal(expect(await api('/api/v1/sites', { token: technician.token }), 200, 'sedes del técnico').items.length, 1);
   await verifyPilotEnrollment({ aws, api, expect, coordinator, technician, other, organization: orgA, tableName: pilot.PilotTableName, exporter: pilot.PilotExportFunctionName });
+  await verifyWeeklyReviews({ aws, api, expect, coordinator, technician, other, organization: orgA, tableName: pilot.PilotTableName, membershipTable: platform.AccessTableName, exporter: pilot.PilotExportFunctionName });
   const path = '/api/v1/sites/north/assets';
   const body = { name: 'Equipo de prueba automática', type: 'Refrigeración', status: 'operational' };
   expect(await api(path, { token: technician.token, method: 'POST', body, key: 'denied' }), 403, 'rol insuficiente');

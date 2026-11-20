@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: SedePulso - inscripcion y linea base del piloto
+Description: SedePulso - inscripcion, linea base y revisiones semanales del piloto
 Parameters:
   Environment: {Type: String, AllowedValues: [development, testing, production]}
   ApiId: {Type: String}
@@ -87,6 +87,30 @@ Resources:
     Properties:
       ApiId: !Ref ApiId
       RouteKey: 'POST /api/v1/sites/{siteId}/pilot/enrollment'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  ReviewsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'GET /api/v1/sites/{siteId}/pilot/reviews'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  ReviewDraftRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'PUT /api/v1/sites/{siteId}/pilot/reviews/{week}'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  ReviewConfirmationRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'POST /api/v1/sites/{siteId}/pilot/reviews/{week}/confirmation'
       Target: !Sub 'integrations/${Integration}'
       AuthorizationType: JWT
       AuthorizerId: !Ref AuthorizerId

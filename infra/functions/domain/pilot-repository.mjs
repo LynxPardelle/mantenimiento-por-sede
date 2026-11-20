@@ -3,6 +3,8 @@ import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, TransactW
 import { setTimeout as delay } from 'node:timers/promises';
 import { digest, fail, siteKey } from './common.mjs';
 import { exportedPilotRow } from './pilot-model.mjs';
+import { createReviewRepository } from './pilot-review-repository.mjs';
+import { exportedReview } from './pilot-review-metrics.mjs';
 
 const registryPartition = 'PILOT#REGISTRY';
 const replayedDraft = (record, expectedRevision, fingerprint) => record?.status === 'draft' && record.revision === expectedRevision + 1 && record.lastExpectedRevision === expectedRevision && record.lastFingerprint === fingerprint;
@@ -15,6 +17,7 @@ export function createPilotRepository({ client, tableName = process.env.PILOT_TA
   const get = async scope => (await client.send(new GetCommand({ TableName: tableName, Key: key(scope), ConsistentRead: true }))).Item;
   return {
     get,
+    ...createReviewRepository({client,tableName}),
     async saveDraft({ scope, actor, expectedRevision, data, now }) {
       const current = await get(scope);
       if (current?.status === 'enrolled') fail(409, 'pilot_already_enrolled');
@@ -66,6 +69,7 @@ export function createPilotRepository({ client, tableName = process.env.PILOT_TA
     async exportRegistry() {
       const cohorts = [];
       const baselines = [];
+      const reviews = [];
       const seenCodes = new Set();
       const seenCursors = new Set();
       let cursor;
@@ -74,9 +78,9 @@ export function createPilotRepository({ client, tableName = process.env.PILOT_TA
         if (++pages > 1000) throw new Error('Pilot registry pagination limit exceeded');
         const page = await client.send(new QueryCommand({ TableName: tableName, ConsistentRead: true, Limit: 100,
           KeyConditionExpression: '#pk = :pk AND begins_with(#sk, :prefix)',
-          ExpressionAttributeNames: { '#pk': 'pk', '#sk': 'sk', '#cohort': 'cohort', '#baseline': 'baseline' },
+          ExpressionAttributeNames: { '#pk': 'pk', '#sk': 'sk', '#cohort': 'cohort', '#baseline': 'baseline', '#reviews':'reviews' },
           ExpressionAttributeValues: { ':pk': registryPartition, ':prefix': 'COHORT#' },
-          ProjectionExpression: '#cohort, #baseline', ...(cursor ? { ExclusiveStartKey: cursor } : {}),
+          ProjectionExpression: '#cohort, #baseline, #reviews', ...(cursor ? { ExclusiveStartKey: cursor } : {}),
         }));
         if (!Array.isArray(page.Items)) throw new Error('Pilot registry response incomplete');
         for (const row of page.Items) {
@@ -84,6 +88,10 @@ export function createPilotRepository({ client, tableName = process.env.PILOT_TA
           if (seenCodes.has(sanitized.cohort.code) || cohorts.length >= 5000) throw new Error('Pilot registry scope duplicate or limit exceeded');
           seenCodes.add(sanitized.cohort.code);
           cohorts.push(sanitized.cohort); baselines.push(sanitized.baseline);
+          if(row.reviews!==undefined&&(!Array.isArray(row.reviews)||row.reviews.length>4))throw new Error('Pilot review registry invalid');
+          const weekly=(row.reviews??[]).map(r=>exportedReview(r,sanitized.cohort));
+          if(new Set(weekly.map(r=>r.week)).size!==weekly.length)throw new Error('Pilot review registry duplicate');
+          reviews.push(...weekly);
         }
         cursor = page.LastEvaluatedKey;
         if (cursor && Object.keys(cursor).length === 0) cursor = undefined;
@@ -92,7 +100,7 @@ export function createPilotRepository({ client, tableName = process.env.PILOT_TA
           seenCursors.add(cursor.sk);
         }
       } while (cursor);
-      const result = { schemaVersion: 1, cohorts, baselines };
+      const result = { schemaVersion: 1, cohorts, baselines, reviews };
       if (Buffer.byteLength(JSON.stringify(result)) > 4 * 1024 * 1024) throw new Error('Pilot export exceeds invocation payload limit');
       return result;
     },

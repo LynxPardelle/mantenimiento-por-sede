@@ -16,6 +16,10 @@ Las inscripciones de la app se guardan en Pilot y no requieren editar este archi
 
 ## Inscripción desde la app
 
+La ampliación TASK-021 añade [revisiones semanales desde la app](../contracts/pilot-weekly-reviews.md), implementadas y en verificación de publicación. Desde una inscripción confirmada, abrir «Revisiones semanales y comparación», elegir semana y registrar hallazgos/siguiente acción. Se puede guardar desde su inicio y confirmar después del fin exclusivo local. No reescribe la inscripción ni los snapshots operacionales; una captura tardía aparece como revisión declarada separada del corte automático original.
+
+Cada revisión puede conservar consultas y esfuerzo sin medir; los ceros sólo se introducen si se observaron. Repetir especialmente las consultas de historial al cerrar la semana cuatro. Declarar si se mantuvo el mismo alcance y método para habilitar las diferencias. La tasa de notas útiles usa numerador/denominador de esa semana; la línea base no contiene una tasa anterior de calidad. El exportador omite hallazgos, siguiente acción, intentos individuales y actores, y el informe conserva los faltantes globales que sigan sin evidencia.
+
 La persona coordinadora abre la pantalla del piloto, elige una sede asignada y captura alcance, participantes por rol, objetivos y línea base. Puede guardar un borrador incompleto y retomarlo. Confirmar exige datos completos y declaraciones explícitas de operación real, autoridad y acuerdo de medición. La app guarda primero los cambios válidos y confirma la revisión devuelta; guardar no equivale a inscribir.
 
 El alcance automático es toda la sede (`all-site-assets`), incluidas altas durante la ventana según su fecha. El inicio debe ser entre mañana y 90 días después de hoy en la zona de la sede. Cada organización/sede tiene un único piloto, cuya inscripción final se conserva sin editar. Esta versión no ofrece cancelación o renovación en la interfaz; un reintento no renueva cuatro semanas. Véase el [contrato HTTP y de datos](../contracts/pilot-enrollment.md).

@@ -19,5 +19,5 @@ test('memory pilot draft isolates sites, copies boundaries and preserves its fir
   assert.equal(retry.updatedAt, '2026-11-20T00:00:00.000Z');
   assert.equal(await repo.get({ orgId: 'org-b', siteId: 'north' }), undefined);
   await assert.rejects(repo.saveDraft(args), error => error.statusCode === 409);
-  assert.deepEqual(await repo.exportRegistry(), { schemaVersion: 1, cohorts: [], baselines: [] });
+  assert.deepEqual(await repo.exportRegistry(), { schemaVersion: 1, cohorts: [], baselines: [], reviews: [] });
 });

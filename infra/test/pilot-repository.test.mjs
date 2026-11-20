@@ -146,7 +146,7 @@ test('registry export is consistent and explicitly paginated, projecting only th
     assert.ok(!input.IndexName);
     assert.equal(input.ExpressionAttributeValues[':pk'], 'PILOT#REGISTRY');
     assert.equal(input.ExpressionAttributeValues[':prefix'], 'COHORT#');
-    assert.deepEqual(Object.values(input.ExpressionAttributeNames).sort(), ['baseline', 'cohort', 'pk', 'sk'].sort());
+    assert.deepEqual(Object.values(input.ExpressionAttributeNames).sort(), ['baseline', 'cohort', 'pk', 'sk', 'reviews'].sort());
   }
   assert.deepEqual(calls[1].input.ExclusiveStartKey, cursor);
 });

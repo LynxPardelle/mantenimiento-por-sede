@@ -37,6 +37,8 @@ El servicio **Pilot** conserva esa información y la inscripción final, única 
 
 El [contrato del onboarding](docs/contracts/pilot-enrollment.md) define límites y reintentos. La [entrega de esta ampliación](docs/releases/2026-11-19-onboarding-piloto.md) registra la publicación y verificación aprobadas en los tres ambientes.
 
+La ampliación de revisiones permite capturar desde la app hallazgos y siguiente acción de cada semana, guardar un borrador durante el periodo y confirmar cuando termine. Se pueden declarar consultas medidas, minutos y notas evaluadas/útiles, conservando lo no medido como faltante. La comparación con la línea base requiere declarar el mismo alcance y método; muestra diferencias entre periodos, sin atribuir ahorro causal. Una revisión confirmada queda fija. Su [contrato](docs/contracts/pilot-weekly-reviews.md) separa estas declaraciones de las métricas automáticas y conserva Stripe deshabilitado; su publicación está en verificación.
+
 ## Entrega e identidad
 
 La aplicación usa Angular servido por Lambda y microservicios AWS separados para acceso, inventario, inspecciones e inscripción/línea base del piloto. La definición actual tiene cinco stacks de aplicación: plataforma, Pilot, Assets, Inspections y frontend. El dominio de producto es `sedepulso.lynxpardelle.com`; development y testing usan dominios propios. Su publicación y disponibilidad se comprueban por ambiente.

@@ -1,8 +1,9 @@
 import { validateRegistry } from './metrics.mjs';
+import { exportedReview } from '../functions/domain/pilot-review-metrics.mjs';
 
 const invalid = () => { throw new Error('invalid_application_enrollments'); };
-function fields(value, names) {
-  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype || Object.keys(value).some(k => !names.includes(k)) || names.some(k => !Object.hasOwn(value, k))) invalid();
+function fields(value, names, optional = []) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype || Object.keys(value).some(k => !names.includes(k)) || names.some(k => !optional.includes(k) && !Object.hasOwn(value, k))) invalid();
 }
 const finite = (n, max) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= max;
 const integer = (n, max) => Number.isInteger(n) && finite(n, max);
@@ -14,7 +15,7 @@ export function mergePilotEnrollments({ registry, exported, checkedAt }) {
   try {
     if (!instant(checkedAt)) invalid();
     const administrative = validateRegistry(registry);
-    fields(exported, ['schemaVersion', 'cohorts', 'baselines']);
+    fields(exported, ['schemaVersion', 'cohorts', 'baselines', 'reviews'], ['reviews']);
     if (exported.schemaVersion !== 1 || !Array.isArray(exported.baselines)) invalid();
     const application = validateRegistry({ schemaVersion: 1, cohorts: exported.cohorts });
     // Fail closed on conflicts rather than relabel or overwrite an established cohort.
@@ -38,11 +39,30 @@ export function mergePilotEnrollments({ registry, exported, checkedAt }) {
       if (!integer(b.people.coordinators, 1000) || b.people.coordinators < 1 || !integer(b.people.technicians, 1000)) invalid();
     }
     if (seen.size !== application.cohorts.length) invalid();
+    const rawReviews = Object.hasOwn(exported, 'reviews') ? exported.reviews : [];
+    if (!Array.isArray(rawReviews)) invalid();
+    const reviewKeys = new Set();
+    const reviews = rawReviews.map(value => {
+      fields(value, ['code', 'week', 'capturedAt', 'source', 'period', 'historyLookup', 'effortMinutes', 'noteAssessment', 'sameProtocol']);
+      fields(value.period, ['startDate', 'endDateExclusive', 'timeZone']);
+      fields(value.historyLookup, ['attempts', 'successful', 'failed', 'medianSuccessfulSeconds']);
+      fields(value.effortMinutes, ['preparation', 'recording', 'assistance']);
+      fields(value.noteAssessment, ['reviewed', 'useful', 'usefulRate']);
+      const cohort = cohortsByCode.get(value.code);
+      const key = `${value.code}/${value.week}`;
+      if (!cohort || reviewKeys.has(key)) invalid();
+      reviewKeys.add(key);
+      return exportedReview(value, cohort);
+    });
     const eligible = application.cohorts.filter(c => c.agreedAt <= checkedAt && exported.baselines.find(b => b.code === c.code).capturedAt <= checkedAt);
+    const eligibleCodes = new Set(eligible.map(c => c.code));
+    const eligibleReviews = reviews.filter(r => eligibleCodes.has(r.code) && r.capturedAt <= checkedAt).sort((a, b) => a.code.localeCompare(b.code) || a.week - b.week);
     return {
       registry: { schemaVersion: 1, cohorts: [...administrative.cohorts, ...eligible] },
       baselines: structuredClone(exported.baselines.filter(b => eligible.some(c => c.code === b.code))),
       deferredEnrollments: application.cohorts.length - eligible.length,
+      reviews: eligibleReviews,
+      deferredReviews: reviews.length - eligibleReviews.length,
     };
   } catch { invalid(); }
 }
