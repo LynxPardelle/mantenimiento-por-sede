@@ -18,7 +18,7 @@ El recorrido es iniciar sesión → elegir sede asignada → registrar equipo �
 - **REQ-002** Una persona técnica consulta pendientes, cierra y confirma el resultado persistido.
 - **REQ-003** Historial con fecha, resultado, nota y autor del primer cierre. Autor proviene del access token verificado; hora UTC, del servidor.
 - **REQ-004** Angular 22 y NgRx SignalStore; SSR desde Lambda Node.js 24 ARM64, estáticos S3 privado y CloudFront OAC. `/api/*` usa HTTP API.
-- **REQ-005** Access, Assets e Inspections tienen funciones, roles, tablas y stacks propios. Sólo Access lee membresías. Las llamadas entre servicios usan IAM.
+- **REQ-005** Access, Assets, Inspections y Piloto tienen funciones, roles, tablas y stacks propios. Sólo Access lee membresías. Las llamadas entre servicios usan IAM. Piloto incorpora un exportador separado de lectura para que el observador no pueda invocar su API de escritura.
 - **REQ-006** Ambientes aislados en `sedepulso-development.lynxpardelle.com`, `sedepulso-testing.lynxpardelle.com` y `sedepulso.lynxpardelle.com`.
 - **SEC-001** HTTP API verifica JWT; backend exige `token_use=access`. Organización, pertenencia y rol se resuelven por `sub` en Access, nunca por datos elegidos por el cliente.
 - **SEC-002** Token inválido o ausente: `401`; sede ajena: `404`; rol insuficiente en sede propia: `403`.
@@ -165,3 +165,13 @@ Las promociones por PR #22/#23 → #24 → #25 terminaron con CI/deploy completo
 El workflow independiente del observador también pasó en producción, run `44643237388`, con lectura posterior del reporte. El cron de las 07:17 GMT-6 está configurado; la siguiente ejecución futura del cron aún no ha ocurrido. El heartbeat local está activo a las 08:00 GMT-6. El corte administrativo posterior al smoke, 2026-11-20 00:07:15–27 UTC (19 de noviembre 18:07 GMT-6), confirmó las tres tablas sin registros persistidos; no mide visitantes ni cuentas Cognito sin espacio aprovisionado.
 
 El [cierre de TASK-006](../docs/releases/2026-11-19-piloto.md) y sus [recibos técnicos](../docs/releases/2026-11-19-piloto-evidence.json) permiten continuar desde remoto. TASK-006 sigue abierto únicamente por la operación real, su línea base, cuatro semanas observadas y decisión comercial: `awaiting-participant`, `pilotWeek=null`. Stripe permanece deshabilitado.
+
+## TASK-020: onboarding del piloto desde la app
+
+Entrega que habilita TASK-006: coordinación accede a `/app/piloto`, delimita toda una sede, elige inicio entre mañana y 90 días en su zona, fija objetivos y registra línea base de siete días locales completos. Un borrador incompleto conserva faltantes explícitos; confirmar exige la semana medida, consultas de historial con duración/resultado, esfuerzo, criterio de nota útil y tres acuerdos sin preseleccionar. La app guarda la revisión actual antes de confirmar. Conflictos conservan los datos locales y los reintentos mantienen el primer acuerdo; una inscripción confirmada no se modifica ni renueva.
+
+Piloto tiene tabla y stack propios. La confirmación persiste el acuerdo privado y su registro mínimo en una transacción. El exportador separado sólo consulta su partición de registro y entrega cohortes canónicas/agregados; el observador combina esa fuente con el registro administrativo conservado, rechazando conflictos. No exporta descripción, protocolo, criterio textual o actor. La línea base declarada no acredita mejora, calidad de notas o uso posterior.
+
+La clasificación la fija el servidor: development/testing son técnicos y las identidades de smoke conservan procedencia técnica también en producción. Una operación autorizada de producción puede inscribirse como real tras confirmar. No se activa Stripe ni se asignan personas o permisos desde los conteos del formulario.
+
+Verificación local: 66 pruebas backend, 19 CI/IAM, 34 del observador/piloto y 50 Angular aprobadas; build SSR sin advertencias y lint de los cinco templates y bootstrap aprobados. Navegador local: borrador recuperado tras recarga, confirmación explícita, semana base y resumen conservados tras recarga, separación entre sedes y móvil 390 px sin desbordamiento. La recarga con el contrato final no produjo errores de consola; una respuesta API incompleta se rechaza antes de mostrar el formulario. Capturas técnicas en `docs/screenshots/pilot-enrolled-local.jpg` y `pilot-onboarding-mobile.jpg`. La publicación y verificación real de esta ampliación en los tres ambientes están en curso.

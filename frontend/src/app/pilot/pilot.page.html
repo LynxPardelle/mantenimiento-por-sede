@@ -1,0 +1,517 @@
+<a class="skip-link" href="#piloto">Ir al piloto</a>
+<header class="site-header">
+  <a class="brand" routerLink="/"
+    ><span class="brand-mark" aria-hidden="true">∿</span>SedePulso<span
+      class="brand-dot"
+      aria-hidden="true"
+      >.</span
+    ></a
+  >
+  <a class="text-link" routerLink="/app">Volver a la operación <span aria-hidden="true">↗</span></a>
+</header>
+<main id="piloto" class="pilot-layout">
+  <aside class="pilot-intro">
+    <p class="eyebrow">UN PUNTO DE PARTIDA COMPARTIDO</p>
+    <h1>Cuatro semanas.<br />Una operación<br /><em>con evidencia.</em></h1>
+    <p>
+      Define qué vas a evaluar y cómo trabajas hoy. Esa comparación permitirá revisar resultados al
+      terminar el piloto.
+    </p>
+    <div class="pilot-facts">
+      <p><strong>01 sede</strong><span>Todo su inventario en el alcance.</span></p>
+      <p><strong>28 días</strong><span>Cuatro semanas en la zona de la sede.</span></p>
+      <p><strong>Sin cobros</strong><span>Sin tarjeta ni conversión automática.</span></p>
+    </div>
+    <p class="privacy-note">
+      Registra criterios y mediciones, sin nombres de personas, correos ni contenido del historial.
+      El borrador se guarda de forma privada en tu operación.
+    </p>
+  </aside>
+  <section class="pilot-panel" aria-label="Inscripción al piloto" [attr.aria-busy]="busy()">
+    @if (error()) {
+      <div class="message error" role="alert" tabindex="-1">
+        <p>{{ error() }}</p>
+        @if (validationIssues().length) {
+          <ul>
+            @for (issue of validationIssues(); track $index) {
+              <li>{{ issue }}</li>
+            }
+          </ul>
+        }
+        @if (conflict()) {
+          <button type="button" class="text-link" [disabled]="busy()" (click)="reload()">
+            Recargar la versión guardada</button
+          ><small>Descarta los cambios locales que aún no guardaste.</small>
+        }
+      </div>
+    }
+    @if (notice()) {
+      <p class="message success" role="status">{{ notice() }}</p>
+    }
+    @if (busy()) {
+      <p class="status-line" role="status">Consultando y guardando tu piloto…</p>
+    }
+    @if (context(); as current) {
+      <div class="site-heading">
+        <div>
+          <p class="eyebrow">SEDE DEL PILOTO</p>
+          <h2>{{ current.site.name }}</h2>
+          <p>{{ current.site.timeZone }}</p>
+        </div>
+        @if (eligibleSites().length > 1) {
+          <div class="field">
+            <label for="pilot-site">Elegir sede</label
+            ><select
+              id="pilot-site"
+              [value]="current.site.id"
+              [disabled]="busy()"
+              (change)="selectSite($event)"
+            >
+              @for (site of eligibleSites(); track site.id) {
+                <option [value]="site.id">{{ site.name }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+      @if (
+        current.classification === 'technical' ||
+        current.enrollment?.classification === 'technical' ||
+        auth.isDemo()
+      ) {
+        <p class="technical-notice">
+          <strong>Inscripción técnica.</strong> Sirve para comprobar el recorrido y las métricas; no
+          cuenta como una operación participante real.
+        </p>
+      }
+      @if (enrolled()) {
+        <div class="enrolled-heading">
+          <span aria-hidden="true">✓</span>
+          <div>
+            <p class="eyebrow">ACUERDO GUARDADO</p>
+            <h2 data-step-heading tabindex="-1">Piloto inscrito</h2>
+          </div>
+        </div>
+        <p>
+          El alcance, los objetivos y la línea base quedaron fijados para conservar la comparación.
+          El seguimiento comenzará en la fecha elegida.
+        </p>
+        <p class="cohort-code">
+          Referencia del piloto <strong>{{ current.enrollment?.code }}</strong>
+        </p>
+      } @else {
+        <nav aria-label="Pasos de la inscripción">
+          <ol class="steps">
+            @for (label of steps; track $index; let position = $index) {
+              <li>
+                <button
+                  type="button"
+                  [disabled]="busy()"
+                  [class.active]="step() === position"
+                  [attr.aria-current]="step() === position ? 'step' : null"
+                  (click)="goToStep(position)"
+                >
+                  <span>{{ position + 1 }}</span>{{ label }}
+                </button>
+              </li>
+            }
+          </ol>
+        </nav>
+        <form novalidate (submit)="$event.preventDefault()">
+          @if (step() === 0) {
+            <h2 data-step-heading tabindex="-1">Delimita el alcance</h2>
+            <p class="description">
+              Esta inscripción incluye todos los equipos de la sede. Describe el proceso que vas a
+              evaluar y las personas que participarán.
+            </p>
+            <div class="field">
+              <label for="pilot-scope">¿Qué vas a evaluar?</label
+              ><textarea
+                id="pilot-scope"
+                rows="4"
+                [formField]="pilotForm.description"
+                aria-describedby="scope-help"
+              ></textarea
+              ><small id="scope-help"
+                >Por ejemplo, el proceso de revisiones preventivas de la sede. Máximo 500
+                caracteres, sin datos personales.</small
+              >
+            </div>
+            <div class="field">
+              <label for="pilot-start">Fecha local de inicio</label
+              ><input
+                id="pilot-start"
+                type="date"
+                [formField]="pilotForm.startDate"
+                aria-describedby="start-help"
+              /><small id="start-help"
+                >Disponible del {{ localDate(current.earliestStartDate) }} al
+                {{ localDate(current.latestStartDate) }} en {{ current.site.timeZone }}. La línea
+                base debe estar lista antes de empezar.</small
+              >
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="pilot-coordinators">Personas de coordinación</label
+                ><input
+                  id="pilot-coordinators"
+                  inputmode="numeric"
+                  [formField]="pilotForm.coordinators"
+                /><small>Entre 1 y 1,000.</small>
+              </div>
+              <div class="field">
+                <label for="pilot-technicians">Personas técnicas</label
+                ><input
+                  id="pilot-technicians"
+                  inputmode="numeric"
+                  [formField]="pilotForm.technicians"
+                /><small>Entre 0 y 1,000.</small>
+              </div>
+            </div>
+            <p class="help-note">
+              Estos números describen el alcance. Las cuentas mantienen sus permisos actuales.
+            </p>
+          }
+          @if (step() === 1) {
+            <h2 data-step-heading tabindex="-1">Acuerda qué sería un buen resultado</h2>
+            <p class="description">
+              Fija el objetivo y un volumen mínimo antes de observar resultados. Al terminar se
+              revisarán junto con el esfuerzo y la calidad de la evidencia.
+            </p>
+            <div class="field">
+              <label for="pilot-target">Inspecciones a tiempo: objetivo (%)</label
+              ><input
+                id="pilot-target"
+                inputmode="decimal"
+                [formField]="pilotForm.onTimePercent"
+                aria-describedby="target-help"
+              /><small id="target-help"
+                >Entre 0 y 100. Se compararán cierres a tiempo con todas las inspecciones que vencen
+                en el periodo, incluidas las pendientes.</small
+              >
+            </div>
+            <div class="field">
+              <label for="pilot-minimum">Mínimo de inspecciones con vencimiento</label
+              ><input
+                id="pilot-minimum"
+                inputmode="numeric"
+                [formField]="pilotForm.minimumDueInspections"
+              /><small
+                >Entre 1 y 100,000 para la evaluación. Un porcentaje sin observaciones no acredita
+                un resultado.</small
+              >
+            </div>
+            <div class="field">
+              <label for="pilot-quality">¿Cuándo considerarás útil una nota?</label
+              ><textarea
+                id="pilot-quality"
+                rows="4"
+                [formField]="pilotForm.noteUsefulnessCriterion"
+              ></textarea
+              ><small
+                >Define un criterio comprobable. Se evaluará su utilidad al revisar la evidencia; la
+                presencia de una nota por sí sola no demuestra calidad. Máximo 1,000
+                caracteres.</small
+              >
+            </div>
+          }
+          @if (step() === 2) {
+            <h2 data-step-heading tabindex="-1">Mide cómo trabajas hoy</h2>
+            <p class="description">
+              Registra consultas reales con tu método actual. Al cerrar las cuatro semanas repetirás
+              las mismas consultas para comparar. Un campo vacío significa pendiente de medir.
+            </p>
+            <div class="field">
+              <label for="baseline-week">Inicio de la semana medida</label>
+              <input
+                id="baseline-week"
+                type="date"
+                [formField]="pilotForm.baselineWeekStartDate"
+                aria-describedby="baseline-week-help"
+              />
+              <small id="baseline-week-help"
+                >Elige una semana de siete días completos anteriores a hoy en
+                {{ current.site.timeZone }}. Su inicio puede estar entre el 01/01/2000 y el
+                {{ localDate(current.latestBaselineWeekStartDate) }}. La fecha queda vacía hasta que
+                registres el periodo que mediste.</small
+              >
+              @if (model().baselineWeekStartDate && baselineWeekEndDate()) {
+                <small
+                  >Periodo de referencia: {{ localDate(model().baselineWeekStartDate) }} —
+                  {{ localDate(baselineWeekEndDate()) }}.</small
+                >
+              }
+            </div>
+            <div class="field">
+              <label for="pilot-protocol">Método para encontrar el historial</label
+              ><textarea
+                id="pilot-protocol"
+                rows="4"
+                [formField]="pilotForm.historyProtocol"
+              ></textarea
+              ><small
+                >Describe la consigna, los puntos de inicio y fin y cómo decidirás que una consulta
+                es correcta. No copies el contenido del historial. Máximo 1,000 caracteres.</small
+              >
+            </div>
+            <fieldset class="attempts">
+              <legend>Consultas medidas</legend>
+              <p>
+                Registra tanto las resueltas como las fallidas, con su duración en segundos. Máximo
+                30 consultas.
+              </p>
+              @for (attempt of pilotForm.historyAttempts; track $index; let index = $index) {
+                <div class="attempt-row">
+                  <strong>Consulta {{ index + 1 }}</strong>
+                  <div class="field">
+                    <label [for]="'attempt-result-' + index">Resultado</label
+                    ><select [id]="'attempt-result-' + index" [formField]="attempt.success">
+                      <option value="">Elige el resultado</option>
+                      <option value="yes">Resuelta correctamente</option>
+                      <option value="no">No resuelta</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label [for]="'attempt-seconds-' + index">Segundos observados</label
+                    ><input
+                      [id]="'attempt-seconds-' + index"
+                      inputmode="decimal"
+                      [formField]="attempt.seconds"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="text-link remove"
+                    [disabled]="busy()"
+                    [attr.aria-label]="'Quitar consulta ' + (index + 1)"
+                    (click)="removeAttempt(index)"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              } @empty {
+                <p class="empty-note">Todavía no hay consultas registradas.</p>
+              }
+              <button
+                type="button"
+                class="button secondary small"
+                [disabled]="busy() || model().historyAttempts.length >= 30"
+                (click)="addAttempt()"
+              >
+                Agregar consulta
+              </button>
+            </fieldset>
+            <fieldset>
+              <legend>Esfuerzo observado de la semana medida</legend>
+              <p>
+                Minutos dedicados con el método actual. Registra cero sólo cuando esté medido; deja
+                vacío lo que aún no hayas observado.
+              </p>
+              <div class="effort-grid">
+                <div class="field">
+                  <label for="baseline-preparation">Preparar</label
+                  ><input
+                    id="baseline-preparation"
+                    inputmode="decimal"
+                    [formField]="pilotForm.preparationMinutes"
+                  />
+                </div>
+                <div class="field">
+                  <label for="baseline-recording">Registrar</label
+                  ><input
+                    id="baseline-recording"
+                    inputmode="decimal"
+                    [formField]="pilotForm.recordingMinutes"
+                  />
+                </div>
+                <div class="field">
+                  <label for="baseline-assistance">Ayudar</label
+                  ><input
+                    id="baseline-assistance"
+                    inputmode="decimal"
+                    [formField]="pilotForm.assistanceMinutes"
+                  />
+                </div>
+              </div>
+              <small>Minutos por actividad, entre 0 y 10,080.</small>
+            </fieldset>
+          }
+        </form>
+      }
+      @if (step() === 3 || enrolled()) {
+        @if (!enrolled()) {
+          <h2 data-step-heading tabindex="-1">Revisa y confirma el punto de partida</h2>
+          <p class="description">
+            Al inscribirte se fijará esta versión. Podrás consultarla después y observar las cuatro
+            semanas con los mismos objetivos.
+          </p>
+        }
+        <dl class="review-summary">
+          <div>
+            <dt>Periodo local</dt>
+            <dd>
+              {{ localDate(model().startDate) }} — {{ localDate(lastPilotDate())
+              }}<small>{{ current.site.timeZone }} · 28 días</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Alcance</dt>
+            <dd>
+              {{ model().description }}<small>Todo el inventario de {{ current.site.name }}.</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Personas del alcance</dt>
+            <dd>{{ model().coordinators }} de coordinación · {{ model().technicians }} técnicas</dd>
+          </div>
+          <div>
+            <dt>Objetivo y volumen</dt>
+            <dd>
+              {{ model().onTimePercent }}% a tiempo · mínimo
+              {{ model().minimumDueInspections }} inspecciones con vencimiento
+            </dd>
+          </div>
+          <div>
+            <dt>Criterio de nota útil</dt>
+            <dd>{{ model().noteUsefulnessCriterion }}</dd>
+          </div>
+          <div>
+            <dt>Semana de referencia</dt>
+            <dd>
+              {{ localDate(model().baselineWeekStartDate) }} — {{ localDate(baselineWeekEndDate())
+              }}<small>{{ current.site.timeZone }} · siete días completos</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Consulta de historial</dt>
+            <dd>
+              {{ model().historyProtocol
+              }}<small
+                >{{ summary().successful }} resueltas y {{ summary().failed }} fallidas de
+                {{ summary().attempts }} medidas.</small
+              ><small
+                >Mediana de las resueltas:
+                @if (summary().medianSuccessfulSeconds === null) {
+                  sin observaciones
+                } @else {
+                  {{ summary().medianSuccessfulSeconds }} segundos
+                }
+              </small>
+            </dd>
+          </div>
+          <div>
+            <dt>Esfuerzo semanal de referencia</dt>
+            <dd>
+              {{ model().preparationMinutes }} min de preparación ·
+              {{ model().recordingMinutes }} min de registro · {{ model().assistanceMinutes }} min
+              de ayuda
+            </dd>
+          </div>
+        </dl>
+        <p class="help-note">
+          La línea base es una medición declarada por tu operación. Los resultados finales y la
+          decisión de continuar se recogerán después del periodo.
+        </p>
+        @if (!enrolled()) {
+          <fieldset class="agreements">
+            <legend>Confirma los tres acuerdos</legend>
+            <label
+              ><input type="checkbox" [formField]="agreementForm.realOperation" /><span>
+                @if (current.classification === 'technical' || auth.isDemo()) {
+                  Confirmo que este alcance es el caso técnico que deseo evaluar.
+                } @else {
+                  Confirmo que este alcance corresponde a una operación real que participa en el
+                  piloto.
+                }
+              </span></label
+            >
+            <label
+              ><input type="checkbox" [formField]="agreementForm.authority" /><span
+                >Tengo autoridad para acordar este alcance, las personas participantes y estos
+                objetivos.</span
+              ></label
+            >
+            <label
+              ><input type="checkbox" [formField]="agreementForm.measurement" /><span
+                >Acuerdo registrar estas mediciones y revisar la evidencia durante las cuatro
+                semanas. La inscripción es gratuita y no autoriza cobros posteriores.</span
+              ></label
+            >
+          </fieldset>
+          <button
+            type="button"
+            class="button primary confirm"
+            [disabled]="busy()"
+            (click)="confirm()"
+          >
+            Confirmar inscripción <span aria-hidden="true">↗</span>
+          </button>
+        }
+      }
+      @if (!enrolled()) {
+        <div class="pilot-actions">
+          <button
+            type="button"
+            class="button secondary small"
+            [disabled]="busy() || (!dirty() && !!current.enrollment)"
+            (click)="saveDraft()"
+          >
+            Guardar borrador</button
+          ><span role="status">{{
+            dirty()
+              ? 'Hay cambios sin guardar'
+              : current.enrollment
+                ? 'Borrador guardado'
+                : 'Sin guardar todavía'
+          }}</span>
+        </div>
+        <div class="step-actions">
+          @if (step() > 0) {
+            <button
+              type="button"
+              class="text-link"
+              [disabled]="busy()"
+              (click)="goToStep(step() - 1)"
+            >
+              ← Anterior
+            </button>
+          }
+          @if (step() < 3) {
+            <button
+              type="button"
+              class="button primary small"
+              [disabled]="busy()"
+              (click)="goToStep(step() + 1)"
+            >
+              Continuar →
+            </button>
+          }
+        </div>
+        @if (current.enrollment) {
+          <button type="button" class="text-link reload" [disabled]="busy()" (click)="reload()">
+            Recargar datos guardados</button
+          ><small class="reload-help">Descarta los cambios locales sin guardar.</small>
+        }
+      } @else {
+        <a class="button primary confirm" routerLink="/app"
+          >Ir a la operación <span aria-hidden="true">↗</span></a
+        >
+      }
+    } @else if (!busy()) {
+      @if (sites().length && !eligibleSites().length) {
+        <h2>Se requiere coordinación</h2>
+        <p>
+          La inscripción y la línea base las acuerda una persona con acceso de coordinación a la
+          sede.
+        </p>
+        <a class="button secondary" routerLink="/app">Volver a la operación</a>
+      } @else {
+        <h2>Prepara tu piloto</h2>
+        <p>Consulta las sedes a las que tienes acceso para comenzar.</p>
+        <button class="button secondary" type="button" (click)="initialize()">
+          Volver a consultar
+        </button>
+      }
+    }
+  </section>
+</main>

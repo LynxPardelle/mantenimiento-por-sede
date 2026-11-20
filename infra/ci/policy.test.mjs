@@ -78,7 +78,7 @@ test('OIDC deploy is restricted to own stacks, role and artifact prefix', () => 
     const id = environment[0].toUpperCase() + environment.slice(1);
     const statements = template.Resources[id + 'GitHubRole'].Properties.Policies[0].PolicyDocument.Statement;
     const create = statements.find(({ Sid }) => Sid === 'CreateOwnChangeSets');
-    assert.equal(create.Resource.length, 4);
+    assert.equal(create.Resource.length, 5);
     assert.ok(create.Resource.every((arn) => arn.includes(`:stack/sedepulso-${environment}-`)));
     const pass = statements.find(({ Sid }) => Sid === 'PassOwnCloudFormationRole');
     assert.equal(pass.Resource, `arn:aws:iam::123456789012:role/sedepulso-ci-${environment}-cloudformation`);
