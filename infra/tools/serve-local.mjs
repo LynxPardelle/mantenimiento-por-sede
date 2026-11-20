@@ -11,7 +11,7 @@ import { createMemoryPilotRepository } from '../functions/domain/pilot-memory.mj
 const hostname = '127.0.0.1';
 const port = 4301;
 
-export async function createDemoHandler() {
+export async function createDemoHandler({ now = () => new Date() } = {}) {
   const repositories = createMemoryRepositories({ memberships: [
     { sub: 'demo-coordinator', orgId: 'org-demo', sites: [
       { id: 'north', name: 'Sede Norte', timeZone: 'America/Mexico_City', role: 'coordinator' },
@@ -30,7 +30,7 @@ export async function createDemoHandler() {
   const assets = createAssetsHandler({ repository: repositories.assets, authorize });
   const getAsset = (identity, siteId, assetId) => unwrap(assets({ internalAction: 'getAsset', identity, siteId, assetId }));
   const inspections = createInspectionsHandler({ repository: repositories.inspections, authorize, getAsset });
-  const pilot = createPilotHandler({ repository: createMemoryPilotRepository(), authorize, environment: 'development' });
+  const pilot = createPilotHandler({ repository: createMemoryPilotRepository(), authorize, environment: 'development', now });
   const event = (method, rawPath, body, key) => ({ version: '2.0', rawPath, requestContext: { http: { method }, authorizer: { jwt: { claims: { sub: 'demo-coordinator', token_use: 'access' } } } }, headers: key ? { 'idempotency-key': key } : {}, ...(body ? { body: JSON.stringify(body) } : {}) });
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   for (const [siteId, name] of [['north', 'Refrigerador de mostrador'], ['south', 'Congelador principal']]) {
@@ -38,15 +38,15 @@ export async function createDemoHandler() {
     const asset = await unwrap(assets(event('POST', base, { name, type: 'Refrigeración comercial', status: 'operational' }, 'demo-seed')));
     await unwrap(inspections(event('POST', `${base}/${asset.id}/inspections`, { dueDate: today }, 'demo-seed')));
   }
-  return (event) => event.rawPath === '/api/v1/sites' ? access(event) : /\/pilot(?:\/enrollment)?$/.test(event.rawPath) ? pilot(event) : /\/assets$/.test(event.rawPath) ? assets(event) : inspections(event);
+  return (event) => event.rawPath === '/api/v1/sites' ? access(event) : /\/pilot(?:\/|$)/.test(event.rawPath) ? pilot(event) : /\/assets$/.test(event.rawPath) ? assets(event) : inspections(event);
 }
 
-export async function createLocalServer({ frontendPort = process.env.SEDEPULSO_FRONTEND_PORT ?? 4200 } = {}) {
+export async function createLocalServer({ frontendPort = process.env.SEDEPULSO_FRONTEND_PORT ?? 4200, now } = {}) {
   if (!/^[0-9]{1,5}$/.test(String(frontendPort)) || !Number.isInteger(Number(frontendPort)) || Number(frontendPort) < 1 || Number(frontendPort) > 65535) {
     throw new Error('El puerto del frontend local debe ser un entero de 1 a 65535.');
   }
   frontendPort = Number(frontendPort);
-  const domain = await createDemoHandler();
+  const domain = await createDemoHandler({ now });
   const server = createServer(async (request, response) => {
     const send = (status, body) => { response.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); response.end(JSON.stringify(body)); };
     try {

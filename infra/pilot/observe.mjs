@@ -1,5 +1,6 @@
 import { aggregatePilotTotals, summarizePilot, validateRegistry } from './metrics.mjs';
 import { mergePilotEnrollments } from './enrollments.mjs';
+import { compareReview } from '../functions/domain/pilot-review-metrics.mjs';
 
 export async function observePilot({ aws, describeStack, readJson, putJson, fetchJson, getEnrollments, collect, environment,
   checkedAt = new Date().toISOString(), runId = 'local', sourceCommit = null }) {
@@ -57,6 +58,7 @@ export async function observePilot({ aws, describeStack, readJson, putJson, fetc
   }
   if (report.cohorts.length && report.cohorts.every(c => c.baselineMeasurement)) report.unmeasured = report.unmeasured.filter(key => key !== 'historyLookupBaseline');
   report.operations.deferredApplicationEnrollments = enrollmentSource.deferredEnrollments;
+  report.operations.deferredApplicationReviews = enrollmentSource.deferredReviews;
   // Write once: a later run cannot revise a closed week's first observed evidence.
   for (const cohort of report.cohorts) for (const week of cohort.weeks) if (week.status === 'closed') {
     const key = `${environment}/reports/weekly/${cohort.code}/${cohort.startDate}/week-${week.week}.json`;
@@ -67,6 +69,13 @@ export async function observePilot({ aws, describeStack, readJson, putJson, fetc
       cohort.weeks[week.week - 1] = frozen.week;
     }
     report.weeklySnapshots.push({ code: cohort.code, week: week.week, key, created });
+  }
+  // Participant declarations may arrive after a closed operational cut. Keep
+  // them beside that immutable evidence rather than inside its frozen window.
+  for (const cohort of report.cohorts) {
+    cohort.weeklyReviews = enrollmentSource.reviews.filter(review => review.code === cohort.code).map(review => ({
+      ...review, comparison: compareReview(cohort.baselineMeasurement, review),
+    }));
   }
   report.totals = aggregatePilotTotals(report.cohorts);
   const date = checkedAt.slice(0, 10);
