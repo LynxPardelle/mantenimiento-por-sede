@@ -2,7 +2,8 @@ name: SedePulso - observación privada del piloto
 
 on:
   schedule:
-    - cron: '17 13 * * *' # 07:17 GMT-6; scheduling is best effort, not real time.
+    - cron: '17 13 * * *' # 07:17 GMT-6; primary daily observation.
+    - cron: '57 21 * * *' # 15:57 GMT-6; daily backup. GitHub scheduling is best effort.
   workflow_dispatch:
     inputs:
       environment:
@@ -30,6 +31,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Identificar disparador de la observación
+        run: node -e 'console.log(JSON.stringify({event:process.env.GITHUB_EVENT_NAME,schedule:process.env.PILOT_SCHEDULE || null}))'
+        env:
+          PILOT_SCHEDULE: ${{ github.event.schedule }}
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.PILOT_OBSERVER_ROLE_ARN }}
