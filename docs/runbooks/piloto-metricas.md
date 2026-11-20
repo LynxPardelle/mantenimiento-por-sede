@@ -80,7 +80,9 @@ No ejecutar con `--debug`, volcar la respuesta del colector ni publicar reportes
 
 ## Programación y seguimiento
 
-El workflow [.github/workflows/piloto.yml](../../.github/workflows/piloto.yml) define una observación diaria de producción a las **07:17 GMT-6** (`13:17 UTC`), además de ejecución manual. GitHub puede retrasar o saltar ejecuciones programadas: la expresión cron no acredita puntualidad ni entrega.
+El workflow [.github/workflows/piloto.yml](../../.github/workflows/piloto.yml) define dos observaciones diarias de producción: el corte principal a las **07:17 GMT-6** (`13:17 UTC`) y el respaldo a las **15:57 GMT-6** (`21:57 UTC`), además de ejecución manual. Ambos usan el mismo rol observador, conservan los snapshots semanales y serializan sus escrituras sin cancelar otra observación. GitHub puede retrasar o saltar ejecuciones programadas: la expresión cron no acredita puntualidad ni entrega.
+
+Para acreditar la programación, consultar `gh run list --workflow piloto.yml --event schedule` y verificar un run exitoso de `main`. Su SHA y número de intento deben coincidir con `sourceCommit` y `runId` del reporte privado. Un `workflow_dispatch`, incluso reciente y exitoso, sólo acredita la ejecución manual. Si no existe ningún run `schedule`, el problema precede al job: comprobar rama predeterminada, workflow activo, cron publicado antes del corte y permisos/estado del actor. La API no expone una causa interna del scheduler; no atribuir esa ausencia a OIDC o AWS sin un job fallido que lo demuestre.
 
 El heartbeat de Codex `sedepulso-seguimiento-del-piloto` está activo en este chat a las **08:00 GMT-6**. Revisa el último resultado, frescura y pendientes; depende de la aplicación local y de sus accesos, sin SLA. No sustituye al workflow ni crea semanas de uso o participantes.
 
