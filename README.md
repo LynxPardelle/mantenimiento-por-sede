@@ -26,6 +26,8 @@ Piloto está disponible gratuitamente en esta etapa, sin tarjeta ni cobros autom
 
 El onboarding publicado añade `/app/piloto`, accesible desde la operación para coordinación. Permite guardar un borrador privado y confirmar alcance de una sede, fecha, objetivos, consultas medidas y esfuerzo inicial durante siete días locales completos. La confirmación exige tres acuerdos explícitos y fija la versión de comparación. La inscripción entra automáticamente al observador sin editar S3; las pruebas técnicas permanecen separadas de participantes reales. Véase el [contrato del piloto](docs/contracts/pilot-enrollment.md).
 
+La ampliación de seguimiento añade `/app/piloto/revisiones`: cuatro ventanas semanales, borradores, confirmación al terminar cada periodo y comparación declarada de historial/esfuerzo frente a la línea base. También captura utilidad de notas, hallazgos y siguiente acción; las ausencias se conservan como «sin medir». Sus agregados se incorporan al observador por separado de los cortes automáticos congelados. Está implementada y en verificación de publicación; véase el [contrato de revisiones](docs/contracts/pilot-weekly-reviews.md).
+
 ## Desarrollo local
 
 Requiere Node.js 24.15 o superior de la rama 24 y npm 11. Instala las versiones de los lockfiles:

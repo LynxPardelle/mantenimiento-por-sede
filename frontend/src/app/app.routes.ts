@@ -14,6 +14,13 @@ export const routes: Routes = [
     title: 'Crea tu cuenta · SedePulso',
   },
   {
+    path: 'app/piloto/revisiones',
+    canActivate: [sessionGuard],
+    loadComponent: () =>
+      import('./pilot-reviews/pilot-reviews.page').then((module) => module.PilotReviewsPage),
+    title: 'Revisiones semanales · SedePulso',
+  },
+  {
     path: 'app/piloto',
     canActivate: [sessionGuard],
     loadComponent: () => import('./pilot/pilot.page').then((module) => module.PilotPage),

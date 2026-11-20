@@ -8,6 +8,8 @@ La arquitectura usa microservicios serverless AWS y Angular servido por Lambda. 
 
 La inscripción desde la app está publicada y verificada en los tres ambientes: [cierre de onboarding](../releases/2026-11-19-onboarding-piloto.md). Incorpora Pilot como quinto stack de aplicación. Los cierres históricos conservan la evidencia de la arquitectura anterior.
 
+TASK-021 amplía el mismo servicio con cuatro revisiones por sede, mediante claves conocidas `PILOT#WEEK#1..4` y sin nuevas tablas o permisos runtime. Cada confirmación guarda la fila privada y actualiza la fila mínima exportable en una transacción, con versión condicional y relectura/merge entre semanas concurrentes. El exportador comparte sólo agregados confirmados. El observador añade `weeklyReviews` después de restaurar sus snapshots operacionales, sin modificar esos cortes congelados. La nueva interfaz privada se resuelve en cliente; la publicación de esta ampliación está en verificación.
+
 ## Componentes y propiedad
 
 | Componente | Responsabilidad | Datos y acceso |
