@@ -1,14 +1,14 @@
 ---
 goal: 'SedePulso: registrar y completar una inspección por sede con microservicios AWS y Angular SSR en Lambda'
 date_created: 2026-11-17
-date_updated: 2026-11-19
+date_updated: 2026-11-20
 status: 'In Progress'
 tags: ['feature', 'angular', 'aws-sam', 'microservices', 'ssr']
 ---
 
 # Plan de la primera funcionalidad de SedePulso
 
-El producto adopta **SedePulso** y `sedepulso.lynxpardelle.com`. Carpeta, repositorio y archivo del plan conservan sus identificadores históricos. La [arquitectura vigente](../docs/architecture/ARCHITECTURE.md) separa plataforma/Access, Assets, Inspections y frontend en stacks con datos e IAM propios.
+El producto adopta **SedePulso** y `sedepulso.lynxpardelle.com`. Carpeta, repositorio y archivo del plan conservan sus identificadores históricos. La [arquitectura vigente](../docs/architecture/ARCHITECTURE.md) separa plataforma/Access, Pilot, Assets, Inspections y frontend en stacks con datos e IAM propios.
 
 El recorrido es iniciar sesión → elegir sede asignada → registrar equipo → programar inspección → consultar pendientes → cerrar → comprobar historial persistido. La entrega técnica y el observador privado están publicados y verificados en los tres ambientes; el piloto comercial de cuatro semanas sigue pendiente. Su guía, métricas y seguimiento están operativos, sin participante o aceptación inventados.
 
@@ -151,7 +151,7 @@ La [guía operativa del piloto](../docs/producto/piloto-operativo.md) prepara se
 
 El 2026-11-19 se implementó un recolector operacional de sólo lectura, separado de las Lambdas del producto. Consulta únicamente Assets e Inspections para cohortes explícitas; no lee nombres, texto de notas o valores de autor. Los informes guardan agregados por código en un bucket privado, versionado y cifrado, con retención definida para reportes. La [guía de operación](../docs/runbooks/piloto-metricas.md) permite retomarlo desde remoto.
 
-- Observación diaria en GitHub Actions a las 07:17 GMT-6; revisión de Codex en este chat a las 08:00. La frescura se comprueba contra `checkedAt`, con señal de atraso después de 26 horas.
+- Observación en GitHub Actions a las 07:17 y 15:57 GMT-6; revisión de Codex en este chat a las 08:00. La frescura del reporte y del último `schedule` exitoso se comprueban por separado, con señal de atraso después de 26 horas. El corte de respaldo es diario, aunque el primero tenga éxito.
 - Semanas 1–4 por calendario local: puntualidad con numerador/denominador, pendientes incluidos, cierres, resultados, inventario y evidencia estructural. Tasas sin denominador son nulas. Los cortes semanales se crean una sola vez y se reutilizan al calcular los totales posteriores.
 - Fechas `createdAt` del servidor para nuevas altas y programaciones, estables al reintentar. No se reconstruyen fechas ausentes en registros anteriores.
 - Registro privado inicial vacío: `awaiting-participant`, `pilotWeek=null`. Las pruebas técnicas no inscriben un participante ni demuestran demanda.
@@ -162,7 +162,7 @@ Verificación final: 43 pruebas backend, 19 CI/IAM, 27 del piloto y 31 Angular a
 
 Las promociones por PR #22/#23 → #24 → #25 terminaron con CI/deploy completos: development `00ce03a`, run `44640475740`; testing `1c0f1b3`, run `44641440002`; producción `e1dae94`, run `44642357476`. Cada ambiente pasó 26 comprobaciones de dominio, cinco de registro y verificación web, con datos temporales limpiados, además de observación con su rol OIDC separado. Los tres informes se leyeron desde S3 y coincidieron con commit/run, AES256, versionado, nueve alarmas OK y facturación deshabilitada.
 
-El workflow independiente del observador también pasó en producción, run `44643237388`, con lectura posterior del reporte. El cron de las 07:17 GMT-6 está configurado; la siguiente ejecución futura del cron aún no ha ocurrido. El heartbeat local está activo a las 08:00 GMT-6. El corte administrativo posterior al smoke, 2026-11-20 00:07:15–27 UTC (19 de noviembre 18:07 GMT-6), confirmó las tres tablas sin registros persistidos; no mide visitantes ni cuentas Cognito sin espacio aprovisionado.
+El workflow independiente del observador también pasó en producción, run `44643237388`, con lectura posterior del reporte. En ese cierre del 19 de noviembre el cron de las 07:17 GMT-6 estaba configurado y aún no se había observado su ejecución; TASK-022 conserva la comprobación posterior de eventos programados. El heartbeat local está activo a las 08:00 GMT-6. El corte administrativo posterior al smoke, 2026-11-20 00:07:15–27 UTC (19 de noviembre 18:07 GMT-6), confirmó las tres tablas sin registros persistidos; no mide visitantes ni cuentas Cognito sin espacio aprovisionado.
 
 El [cierre de TASK-006](../docs/releases/2026-11-19-piloto.md) y sus [recibos técnicos](../docs/releases/2026-11-19-piloto-evidence.json) permiten continuar desde remoto. TASK-006 sigue abierto únicamente por la operación real, su línea base, cuatro semanas observadas y decisión comercial: `awaiting-participant`, `pilotWeek=null`. Stripe permanece deshabilitado.
 
@@ -193,3 +193,15 @@ La promoción PR #35 → #36 → #37 completó CI y publicación: development `b
 El observador independiente de producción aprobó el run `44680685706`, con lectura posterior del informe del `2026-11-20T05:23:25.983Z`. El corte administrativo de sólo conteos entre `05:23:12.990Z` y `05:23:24.302Z` encontró las cuatro tablas sin registros persistidos tras las pruebas; no cuenta visitantes o cuentas Cognito sin espacio ni representa una transacción entre tablas. El heartbeat existente se actualizó a cinco stacks, once alarmas y `weeklyReviews`, manteniendo las 08:00 GMT-6 y este chat.
 
 TASK-021 está entregada. TASK-006 conserva pendientes una operación real, sus semanas observadas y evaluación comercial; los calendarios simulados no son semanas reales y Stripe sigue deshabilitado. El [cierre de revisiones](../docs/releases/2026-11-19-revisiones-piloto.md), los [recibos saneados](../docs/releases/2026-11-19-revisiones-piloto-evidence.json) y el [contrato](../docs/contracts/pilot-weekly-reviews.md) permiten continuar desde remoto.
+
+## TASK-022: programación y procedencia del observador
+
+La inspección inicial del 20 de noviembre encontró tres runs manuales y ninguno `schedule`, con `main` predeterminada, Actions y workflow activos y cron publicado antes del corte. Durante la revisión apareció el run programado `44818232242`, creado a las `21:12:23 UTC` y exitoso a las `21:12:52 UTC`, desde `e1694db73850de6209241b52a309368000f6d806`. Su reporte privado de `21:12:32.373 UTC` coincidió con SHA/run/intento, cinco stacks completos, once alarmas OK, AES256, versionado y facturación deshabilitada.
+
+Ese commit anterior sólo contenía el cron `13:17 UTC`; la creación del evento fue casi ocho horas posterior al horario definido. Es compatible con una entrega tardía del tick del mismo día; GitHub no expone el motivo interno. El run precedió al cambio, por lo que no se atribuye su recuperación al nuevo cron ni se inventa un fallo OIDC/AWS.
+
+La mejora conserva el corte de las 07:17 GMT-6 y añade otro diario a las 15:57 GMT-6. Registra sólo tipo de evento y expresión cron; mantiene rol observador separado, guardas de `main`/ambiente y serialización sin cancelación. El heartbeat existente conserva las 08:00 GMT-6 y revisa por separado el último `schedule` exitoso y la frescura del reporte: una ejecución manual reciente no oculta una ausencia programada mayor de 26 horas.
+
+La promoción PR #41 → #42 → #43 verificó development `cf61cb7bf0116554c65235c968fc9efa13a6b0d3`, run `44818569583`; testing `7e8a74c03abdf10da024e909f83f38d232b832c1`, run `44819681853`; production `1c977584fc55b2b41aa492644162cfed57d04e9c`, run `44820926265`. Los tres aprobaron 216 pruebas, build SSR, lint, 60 comprobaciones de dominio, cinco de registro y web/orígenes privados. Limpiaron sus tres identidades técnicas por ambiente y sus informes privados coincidieron con SHA/run/intento, AES256, versionado, cinco stacks completos, once alarmas OK y facturación deshabilitada.
+
+La ejecución programada real solicitada queda acreditada por `44818232242`; su código de cálculo/persistencia coincide con el publicado. El respaldo nuevo seguía sin run visible a las `22:13:34 UTC` y se conserva `not-yet-observed`, sin atribuirle la primera recuperación ni declarar resuelta la puntualidad interna de GitHub. El [cierre de programación](../docs/releases/2026-11-20-observador-programado.md) y sus [recibos saneados](../docs/releases/2026-11-20-observador-programado-evidence.json) conservan ambas situaciones. TASK-006 continúa pendiente de operación real y observación comercial; Stripe sigue deshabilitado.
