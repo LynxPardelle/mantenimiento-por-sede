@@ -16,7 +16,7 @@ El backend se divide en microservicios con Lambdas, roles, tablas y stacks propi
 | testing | `testing` | `sedepulso-testing.lynxpardelle.com` |
 | production | `main` | `sedepulso.lynxpardelle.com` |
 
-Los tres ambientes publican la inscripción del piloto: [development](https://sedepulso-development.lynxpardelle.com), [testing](https://sedepulso-testing.lynxpardelle.com) y [producción](https://sedepulso.lynxpardelle.com). En cada uno se verificaron OIDC, cinco stacks, 41 comprobaciones de dominio, cinco de registro y web/orígenes privados, con limpieza de datos e identidades técnicas. Los reportes privados coincidieron con su commit/run, once alarmas OK y facturación deshabilitada. Consulta el [cierre de onboarding y runs](docs/releases/2026-11-19-onboarding-piloto.md) y el [plan](plan/feature-mantenimiento-1.md). La [entrega anterior](docs/releases/2026-11-19-sedepulso.md) conserva la comprobación de correo real y login PKCE/callback en navegador de producción; el nuevo formulario se verificó en navegador local y por API en los tres ambientes.
+Los tres ambientes publican la inscripción y las revisiones del piloto: [development](https://sedepulso-development.lynxpardelle.com), [testing](https://sedepulso-testing.lynxpardelle.com) y [producción](https://sedepulso.lynxpardelle.com). En cada uno se verificaron OIDC, cinco stacks, 60 comprobaciones de dominio, cinco de registro y web/orígenes privados, con limpieza de datos e identidades técnicas. Los reportes privados coincidieron con su commit/run, once alarmas OK, integración semanal y facturación deshabilitada. Consulta el [cierre de revisiones y runs](docs/releases/2026-11-19-revisiones-piloto.md) y el [plan](plan/feature-mantenimiento-1.md). La [entrega anterior](docs/releases/2026-11-19-sedepulso.md) conserva la comprobación de correo real y login PKCE/callback en navegador de producción; las pantallas del piloto se verificaron en navegador local y por API en los tres ambientes.
 
 ## Registro y planes
 
@@ -26,7 +26,7 @@ Piloto está disponible gratuitamente en esta etapa, sin tarjeta ni cobros autom
 
 El onboarding publicado añade `/app/piloto`, accesible desde la operación para coordinación. Permite guardar un borrador privado y confirmar alcance de una sede, fecha, objetivos, consultas medidas y esfuerzo inicial durante siete días locales completos. La confirmación exige tres acuerdos explícitos y fija la versión de comparación. La inscripción entra automáticamente al observador sin editar S3; las pruebas técnicas permanecen separadas de participantes reales. Véase el [contrato del piloto](docs/contracts/pilot-enrollment.md).
 
-La ampliación de seguimiento añade `/app/piloto/revisiones`: cuatro ventanas semanales, borradores, confirmación al terminar cada periodo y comparación declarada de historial/esfuerzo frente a la línea base. También captura utilidad de notas, hallazgos y siguiente acción; las ausencias se conservan como «sin medir». Sus agregados se incorporan al observador por separado de los cortes automáticos congelados. Está implementada y en verificación de publicación; véase el [contrato de revisiones](docs/contracts/pilot-weekly-reviews.md).
+El seguimiento publicado añade `/app/piloto/revisiones`: cuatro ventanas semanales, borradores, confirmación al terminar cada periodo y comparación declarada de historial/esfuerzo frente a la línea base. También captura utilidad de notas, hallazgos y siguiente acción; las ausencias se conservan como «sin medir». Sus agregados se incorporan al observador por separado de los cortes automáticos congelados. Véase el [contrato de revisiones](docs/contracts/pilot-weekly-reviews.md).
 
 ## Desarrollo local
 
@@ -77,6 +77,7 @@ El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) e
 - [Entrega verificada del 2026-11-19](docs/releases/2026-11-19-sedepulso.md).
 - [TASK-006: métricas y seguimiento publicados](docs/releases/2026-11-19-piloto.md).
 - [TASK-020: onboarding y línea base publicados](docs/releases/2026-11-19-onboarding-piloto.md).
+- [TASK-021: revisiones semanales y comparación publicadas](docs/releases/2026-11-19-revisiones-piloto.md).
 - [Marca y dominios](docs/branding.md).
 - [Promoción entre ambientes](docs/promocion.md).
 - [Operación y despliegue](docs/runbooks/despliegue.md).
