@@ -24,6 +24,8 @@ Todas las rutas siguientes son relativas a `/api/v1/sites/{siteId}` y las respue
 
 Las respuestas válidas son `200`. No hay ruta para editar una inscripción confirmada, cancelar, reiniciar o renovar el piloto desde esta interfaz. Existe un único piloto por organización/sede. Reconfirmar devuelve el original cuando corresponde; no crea otras cuatro semanas.
 
+El [contrato de revisiones semanales](pilot-weekly-reviews.md) añade rutas y registros separados a partir de esa inscripción, sin modificar su línea base o sus acuerdos. La exportación del dueño conserva cohorts/baselines y añade `reviews` con agregados confirmados; el observador nuevo acepta también la entrega anterior sin ese campo. Los textos y actores de las revisiones permanecen privados y los snapshots operacionales se conservan por separado.
+
 ## Borrador y validación
 
 La primera escritura usa `expectedRevision=0`. Una lectura devuelve la revisión vigente, que se debe enviar al guardar o confirmar. El cuerpo de `PUT` admite exactamente `expectedRevision`, `startDate`, `scope`, `goals` y `baseline`; se rechazan campos desconocidos, también en objetos anidados. El JSON decodificado tiene un máximo de 16 KiB.

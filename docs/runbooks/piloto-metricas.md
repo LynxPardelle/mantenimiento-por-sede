@@ -16,7 +16,7 @@ Las inscripciones de la app se guardan en Pilot y no requieren editar este archi
 
 ## Inscripción desde la app
 
-La ampliación TASK-021 añade [revisiones semanales desde la app](../contracts/pilot-weekly-reviews.md), implementadas y en verificación de publicación. Desde una inscripción confirmada, abrir «Revisiones semanales y comparación», elegir semana y registrar hallazgos/siguiente acción. Se puede guardar desde su inicio y confirmar después del fin exclusivo local. No reescribe la inscripción ni los snapshots operacionales; una captura tardía aparece como revisión declarada separada del corte automático original.
+TASK-021 añade [revisiones semanales desde la app](../contracts/pilot-weekly-reviews.md), publicadas y verificadas en los tres ambientes. Desde una inscripción confirmada, abrir «Revisiones semanales y comparación», elegir semana y registrar hallazgos/siguiente acción. Se puede guardar desde su inicio y confirmar después del fin exclusivo local. No reescribe la inscripción ni los snapshots operacionales; una captura tardía aparece como revisión declarada separada del corte automático original.
 
 Cada revisión puede conservar consultas y esfuerzo sin medir; los ceros sólo se introducen si se observaron. Repetir especialmente las consultas de historial al cerrar la semana cuatro. Declarar si se mantuvo el mismo alcance y método para habilitar las diferencias. La tasa de notas útiles usa numerador/denominador de esa semana; la línea base no contiene una tasa anterior de calidad. El exportador omite hallazgos, siguiente acción, intentos individuales y actores, y el informe conserva los faltantes globales que sigan sin evidencia.
 
@@ -83,6 +83,8 @@ No ejecutar con `--debug`, volcar la respuesta del colector ni publicar reportes
 El workflow [.github/workflows/piloto.yml](../../.github/workflows/piloto.yml) define una observación diaria de producción a las **07:17 GMT-6** (`13:17 UTC`), además de ejecución manual. GitHub puede retrasar o saltar ejecuciones programadas: la expresión cron no acredita puntualidad ni entrega.
 
 El heartbeat de Codex `sedepulso-seguimiento-del-piloto` está activo en este chat a las **08:00 GMT-6**. Revisa el último resultado, frescura y pendientes; depende de la aplicación local y de sus accesos, sin SLA. No sustituye al workflow ni crea semanas de uso o participantes.
+
+Su prompt se actualizó mediante la herramienta de automatizaciones durante TASK-021: conserva horario, chat y estado activo, y ahora comprueba cinco stacks, once alarmas y `weeklyReviews` junto a sus comparaciones. Distingue estas declaraciones de los snapshots automáticos, conserva faltantes y no escribe mediciones o participantes inventados.
 
 En cada seguimiento comprobar:
 
