@@ -1,6 +1,6 @@
 # Revisiones semanales y comparación del piloto
 
-Diseño de TASK-021, ampliación de TASK-006. Se extiende Pilot y su tabla propia; una revisión por cada una de las cuatro semanas. Se conserva Angular privado con renderizado cliente, autorización de coordinación por Access y Stripe deshabilitado. Publicación pendiente de la implementación y verificación por development → testing → main.
+Contrato de TASK-021, ampliación de TASK-006. Se extiende Pilot y su tabla propia; una revisión por cada una de las cuatro semanas. Se conserva Angular privado con renderizado cliente, autorización de coordinación por Access y Stripe deshabilitado. La [publicación y verificación](../releases/2026-11-19-revisiones-piloto.md) terminó por development → testing → main.
 
 ## Captura y periodos
 
@@ -20,6 +20,6 @@ Una revisión confirmada produce un resumen mínimo `{code,week,capturedAt,sourc
 
 El exportador conserva cohorts/baselines y añade `reviews`, lista de resúmenes confirmados; consumidores nuevos admiten la ausencia del campo en la entrega anterior. Pilot actualiza fila privada y resumen exportable atómicamente, con versión condicional y relectura/merge de conflictos entre semanas. El observador valida identidad de cohorte, periodo, cierre, captura y whitelist; difiere capturas posteriores a checkedAt. Adjunta `weeklyReviews` fuera de los snapshots operacionales inmutables, después de restaurarlos. Conserva los faltantes de métricas no capturadas y no presenta datos técnicos como participantes reales.
 
-## Verificación prevista
+## Verificación
 
-Pruebas de ventanas locales/DST, ausencia y ceros, medianas y porcentajes, autorización, revisión/concurrencia/reintentos, inmutabilidad, exportación mínima y convivencia con snapshots congelados. Navegador con datos técnicos para borrador/recarga, errores recuperables, confirmación y comparación en escritorio/móvil. En nube sólo se madura un fixture de procedencia técnica y namespace de smoke mediante preparación administrativa acotada; no se acepta un reloj HTTP ni se relajan las reglas del producto. Limpieza condicionada de sus claves conocidas. Cada ambiente repite comprobaciones, reporte privado y guardia billingEnabled=false.
+Pasaron 214 pruebas automatizadas, build SSR y lint: ventanas locales/DST, ausencia y ceros, medianas y porcentajes, autorización, revisión/concurrencia/reintentos, inmutabilidad, exportación mínima y convivencia con snapshots congelados. El navegador con datos técnicos comprobó borrador/recarga, errores recuperables, confirmación y comparación en escritorio/móvil. En nube sólo se maduró un fixture de procedencia técnica y namespace de smoke mediante preparación administrativa acotada; no se acepta un reloj HTTP ni se relajan las reglas del producto. La limpieza condicionada comprueba seis claves conocidas, incluyendo cuatro semanas. Cada ambiente aprobó 60 comprobaciones de dominio, cinco de registro, web/orígenes privados, reporte privado y guardia billingEnabled=false. Los calendarios simulados no representan semanas reales transcurridas.

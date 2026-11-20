@@ -16,6 +16,14 @@ La fecha del acuerdo, el código, el contexto y la clasificación son del servid
 
 La inscripción final conserva alcance, objetivos y línea base. Esta versión admite un único piloto por organización/sede y no ofrece edición posterior, cancelación o renovación en la interfaz. Una respuesta perdida se recupera repitiendo la confirmación de la misma revisión; no se inicia otro periodo ni se modifica la evidencia original. Stripe permanece deshabilitado.
 
+## Revisar cada semana desde la app
+
+Las [revisiones semanales y comparación](../contracts/pilot-weekly-reviews.md) están publicadas y verificadas en los tres ambientes: [cierre de entrega](../releases/2026-11-19-revisiones-piloto.md). Desde el piloto inscrito, abrir «Revisiones semanales y comparación» y elegir una de sus cuatro ventanas. Las fechas y la zona quedan derivadas de la inscripción; se guarda desde el inicio de la semana y se confirma después de su fin exclusivo local.
+
+Capturar hallazgos y siguiente acción. Añadir consultas medidas, minutos de preparación/registro/ayuda y notas evaluadas/útiles cuando exista esa observación; lo no medido permanece vacío. Declarar si se mantuvo el mismo alcance y método. Guardar el borrador para retomarlo; al confirmar, aceptar explícitamente que corresponde a la semana indicada y a los datos observados. La revisión confirmada queda conservada, con fecha de captura separada del periodo.
+
+La comparación muestra medianas, tasas con conteos y variaciones de minutos cuando hay datos comparables. Si cambió el método, falta una medición, no hubo consultas exitosas o la base es cero para un porcentaje, conserva la ausencia de diferencia aplicable. Las notas útiles tienen tasa de esa semana, sin inventar una tasa base. Los cortes automáticos de inspecciones quedan intactos aunque se confirme tarde; las declaraciones aparecen en `weeklyReviews` por separado.
+
 ## Semana 0: preparar y fijar la comparación
 
 Confirmar sede inicial, zona IANA, fechas, inventario incluido y cantidad declarada de personas por rol. El código se obtiene de la inscripción del servidor. Acordar revisiones reales, coordinación y decisión de compra a evaluar. Fijar previamente objetivos de mejora, volumen mínimo de observaciones y criterio de nota útil.
@@ -28,7 +36,7 @@ Elegir una semana base de siete días locales completos y registrar cómo se enc
 
 Recoger códigos de sede/equipo, tipo de equipo, semana, zona, vencimiento, estado, resultado y fecha UTC de cierre. Registrar si nota y autor están presentes y si la nota cumple el criterio acordado. Revisar la trazabilidad dentro de la aplicación; no copiar nombres, correos, identificadores de acceso, tokens ni notas que identifiquen personas.
 
-Conservar la línea base en Pilot mediante la app y los seguimientos semanales en una bitácora privada. No guardar información del participante en este repositorio público. La descripción, el protocolo y el criterio quedan dentro del servicio Pilot para coordinadores autorizados; el exportador sólo comparte agregados. Separar operación real y pruebas; marcar faltantes sin sustituirlos por ceros.
+Conservar la línea base y las revisiones semanales en Pilot mediante la app; la bitácora privada puede añadir evidencia complementaria sin sustituir los cortes guardados. No guardar información del participante en este repositorio público. La descripción, el protocolo, el criterio, los hallazgos y la siguiente acción quedan dentro del servicio Pilot para coordinadores autorizados; el exportador sólo comparte agregados. Separar operación real y pruebas; marcar faltantes sin sustituirlos por ceros.
 
 ## Instrumentación y seguimiento preparados
 
