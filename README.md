@@ -71,6 +71,7 @@ El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) e
 - [Arquitectura y contratos](docs/architecture/ARCHITECTURE.md).
 - [Plan y evidencia](plan/feature-mantenimiento-1.md).
 - [Entrega verificada del 2026-11-19](docs/releases/2026-11-19-sedepulso.md).
+- [TASK-006: métricas y seguimiento publicados](docs/releases/2026-11-19-piloto.md).
 - [Marca y dominios](docs/branding.md).
 - [Promoción entre ambientes](docs/promocion.md).
 - [Operación y despliegue](docs/runbooks/despliegue.md).

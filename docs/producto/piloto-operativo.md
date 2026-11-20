@@ -18,7 +18,7 @@ Conservar periodos, conteos, tiempos agregados, incidencias y decisiones en una 
 
 ## Instrumentación y seguimiento preparados
 
-El cálculo del piloto y el colector operacional están implementados en `infra/pilot/`; `infra/tools/observe-pilot.mjs` comprueba salud, Stripe deshabilitado, stacks, tablas y alarmas antes de persistir agregados privados. Su despliegue y la ejecución OIDC deben acreditarse con runs reales por ambiente; tener el código no acredita un piloto en marcha.
+El cálculo del piloto y el colector operacional están implementados en `infra/pilot/`; `infra/tools/observe-pilot.mjs` comprueba salud, Stripe deshabilitado, stacks, tablas y alarmas antes de persistir agregados privados. Su publicación, ejecución OIDC y lectura posterior de los reportes privados están verificadas en development, testing y producción, con runs `SUCCESS` y una ejecución independiente en producción: [cierre técnico](../releases/2026-11-19-piloto.md); esto no acredita un piloto comercial en marcha.
 
 El workflow `piloto.yml` define observación diaria de producción a las 07:17 GMT-6, con ejecución manual y rol OIDC separado del despliegue y del runtime del producto. El heartbeat local de este chat `sedepulso-seguimiento-del-piloto` está activo a las 08:00 GMT-6 para revisar resultados y pendientes, sin SLA. Cada revisión comprueba una frescura máxima de 26 horas. Fallos del observador aparecen en GitHub Actions; no se envían correos desde este flujo. Alarmas sin canal de notificación no prueban entrega de avisos.
 
