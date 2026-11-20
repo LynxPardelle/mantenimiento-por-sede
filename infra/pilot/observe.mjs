@@ -1,17 +1,21 @@
 import { aggregatePilotTotals, summarizePilot, validateRegistry } from './metrics.mjs';
+import { mergePilotEnrollments } from './enrollments.mjs';
 
-export async function observePilot({ aws, describeStack, readJson, putJson, fetchJson, collect, environment,
+export async function observePilot({ aws, describeStack, readJson, putJson, fetchJson, getEnrollments, collect, environment,
   checkedAt = new Date().toISOString(), runId = 'local', sourceCommit = null }) {
   if (!['development', 'testing', 'production'].includes(environment) || !/^[a-zA-Z0-9-]{1,100}$/.test(runId)) throw new Error('invalid_observation_scope');
   let registry;
   try { registry = validateRegistry(await readJson(`${environment}/registry.json`)); }
   catch { throw new Error('pilot_registry_unavailable_or_invalid'); }
-  if (environment !== 'production' && registry.cohorts.some(c => c.classification !== 'technical')) throw new Error('real_cohort_requires_production');
   const stacks = {};
-  for (const name of ['platform', 'assets', 'inspections', 'frontend']) {
+  for (const name of ['platform', 'assets', 'inspections', 'pilot', 'frontend']) {
     stacks[name] = await describeStack(`sedepulso-${environment}-${name}`);
     if (!['CREATE_COMPLETE', 'UPDATE_COMPLETE'].includes(stacks[name].status)) throw new Error('pilot_stack_not_ready');
   }
+  if (!stacks.pilot.outputs.PilotExportFunctionName || typeof getEnrollments !== 'function') throw new Error('pilot_enrollment_export_unavailable');
+  const enrollmentSource = mergePilotEnrollments({ registry, exported: await getEnrollments(stacks.pilot.outputs.PilotExportFunctionName), checkedAt });
+  registry = enrollmentSource.registry;
+  if (environment !== 'production' && registry.cohorts.some(c => c.classification !== 'technical')) throw new Error('real_cohort_requires_production');
   const url = `https://sedepulso${environment === 'production' ? '' : '-' + environment}.lynxpardelle.com`;
   const [config, health] = await Promise.all([fetchJson(`${url}/api/config`), fetchJson(`${url}/api/health`)]);
   if (config.billingEnabled !== false) throw new Error('pilot_billing_guard_failed');
@@ -47,6 +51,12 @@ export async function observePilot({ aws, describeStack, readJson, putJson, fetc
     },
     weeklySnapshots: [],
   };
+  for (const cohort of report.cohorts) {
+    cohort.baselineMeasurement = enrollmentSource.baselines.find(b => b.code === cohort.code) || null;
+    if (cohort.baselineMeasurement) cohort.unmeasured = cohort.unmeasured.filter(key => key !== 'historyLookupBaseline');
+  }
+  if (report.cohorts.length && report.cohorts.every(c => c.baselineMeasurement)) report.unmeasured = report.unmeasured.filter(key => key !== 'historyLookupBaseline');
+  report.operations.deferredApplicationEnrollments = enrollmentSource.deferredEnrollments;
   // Write once: a later run cannot revise a closed week's first observed evidence.
   for (const cohort of report.cohorts) for (const week of cohort.weeks) if (week.status === 'closed') {
     const key = `${environment}/reports/weekly/${cohort.code}/${cohort.startDate}/week-${week.week}.json`;

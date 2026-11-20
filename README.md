@@ -8,7 +8,7 @@ La primera versión cubre inventario, inspecciones manuales y evidencia textual.
 
 Angular 22 y NgRx SignalStore forman la interfaz. Angular SSR se sirve desde una Lambda Node.js 24 ARM64 detrás de CloudFront; los estáticos se sirven desde S3 privado. CloudFront usa Origin Access Control para ambos orígenes y dirige `/api/*` a API Gateway HTTP API. La Lambda SSR no tiene permisos DynamoDB.
 
-El backend se divide en microservicios con Lambdas, roles, tablas y stacks propios: plataforma y Access, Assets e Inspections. Los servicios resuelven pertenencia y rol invocando Access por IAM; Inspections valida el equipo invocando Assets. No comparten acceso directo a sus tablas. Cognito proporciona inicio de sesión con authorization code y PKCE, cliente público sin secreto y registro con correo verificado.
+El backend se divide en microservicios con Lambdas, roles, tablas y stacks propios: plataforma y Access, Assets, Inspections y Piloto, además del stack frontend. Los servicios resuelven pertenencia y rol invocando Access por IAM; Inspections valida el equipo invocando Assets. Piloto conserva alcance, objetivos y línea base, y exporta sólo agregados al observador mediante una Lambda separada de lectura. No comparten acceso directo a sus tablas. Cognito proporciona inicio de sesión con authorization code y PKCE, cliente público sin secreto y registro con correo verificado.
 
 | Ambiente | Rama | Dominio |
 | --- | --- | --- |
@@ -23,6 +23,8 @@ Los tres ambientes están publicados y verificados: [development](https://sedepu
 La landing explica el producto y compara los planes. `/registro` solicita organización, sede, zona horaria, correo y contraseña; después de confirmar el código recibido se crea un espacio propio con rol coordinador. Las pertenencias existentes se conservan y el cliente no elige roles ni organizaciones internas.
 
 Piloto está disponible gratuitamente en esta etapa, sin tarjeta ni cobros automáticos. Operación y Red están en diseño; precios y funciones adicionales deben validarse antes de venderse. Stripe no está integrado. Consulta la [propuesta de planes](docs/producto/planes-y-suscripciones.md), la [guía de piloto de cuatro semanas](docs/producto/piloto-operativo.md) y el [contrato de registro](docs/contracts/registration.md).
+
+La ampliación de onboarding añade `/app/piloto`, accesible desde la operación para coordinación. Permite guardar un borrador privado y confirmar alcance de una sede, fecha, objetivos, consultas medidas y esfuerzo inicial. La confirmación exige tres acuerdos explícitos y fija la versión de comparación. La inscripción entra automáticamente al observador sin editar S3; las pruebas técnicas permanecen separadas de participantes reales. Su publicación está en verificación; véase el [contrato del piloto](docs/contracts/pilot-enrollment.md).
 
 ## Desarrollo local
 
@@ -50,7 +52,7 @@ npm --prefix frontend run build
 node --test infra/test/*.test.mjs
 node --test infra/ci/*.test.mjs
 node --test infra/pilot/*.test.mjs
-cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/frontend.yaml
+cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/services/pilot.yaml infra/frontend.yaml
 ```
 
 Para empaquetar y desplegar development desde PowerShell, una vez completado el [bootstrap OIDC y vinculado el pool exacto](docs/runbooks/ci-oidc.md):

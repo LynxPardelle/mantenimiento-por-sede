@@ -1,18 +1,30 @@
 # Observación privada del piloto de SedePulso
 
-Esta guía permite retomar TASK-006 desde remoto. La instrumentación está publicada y su ejecución OIDC, persistencia y lectura posterior están verificadas en development, testing y producción, con runs `SUCCESS` y una ejecución independiente en producción: [cierre técnico](../releases/2026-11-19-piloto.md). Stripe permanece deshabilitado. La observación no crea usuarios, operaciones, inspecciones ni participantes.
+Esta guía permite retomar TASK-006 desde remoto. La entrega anterior del observador fue verificada en los tres ambientes: [cierre técnico](../releases/2026-11-19-piloto.md). La ampliación a inscripción desde la app, quinto stack Pilot y exportación de línea base está implementada; su publicación en los tres ambientes está en verificación. Stripe permanece deshabilitado. El observador conserva sólo lectura de negocio: la inscripción es una acción explícita del coordinador en la API de Pilot.
 
 ## Punto de partida y estado comercial
 
 La lectura administrativa del 19 de noviembre de 2026, entre 23:23:06 y 23:23:17 UTC, encontró cero registros en las tablas Access, Assets e Inspections de producción mediante scans consistentes con `Select=COUNT`. Esto acredita cero organizaciones aprovisionadas, membresías, equipos e inspecciones persistidos en ese corte; no mide visitas ni cuentas Cognito sin confirmar. Este scan fue una comprobación puntual administradora y no forma parte del observador recurrente.
 
-El registro privado inicial debe permanecer vacío:
+El registro administrativo privado se creó vacío y se conserva si no hay inscripciones administrativas:
 
 ```json
 { "schemaVersion": 1, "cohorts": [] }
 ```
 
-Su resultado es `status=awaiting-participant`, `pilotWeek=null` y métricas comerciales sin observaciones. Un registro de producto con `plan=pilot`, un alta Cognito, un detector sano o cuatro semanas transcurridas en el calendario no acreditan un piloto real.
+Las inscripciones de la app se guardan en Pilot y no requieren editar este archivo S3. No reinicializarlo ni reemplazar entradas existentes para adoptar la nueva fuente. Con ambas fuentes sin cohortes reales el resultado es `status=awaiting-participant`, `pilotWeek=null` y métricas comerciales sin observaciones. Un registro de producto con `plan=pilot`, un alta Cognito, un detector sano o cuatro semanas transcurridas en el calendario no acreditan un piloto real.
+
+## Inscripción desde la app
+
+La persona coordinadora abre la pantalla del piloto, elige una sede asignada y captura alcance, participantes por rol, objetivos y línea base. Puede guardar un borrador incompleto y retomarlo. Confirmar exige datos completos y declaraciones explícitas de operación real, autoridad y acuerdo de medición. La app guarda primero los cambios válidos y confirma la revisión devuelta; guardar no equivale a inscribir.
+
+El alcance automático es toda la sede (`all-site-assets`), incluidas altas durante la ventana según su fecha. El inicio debe ser entre mañana y 90 días después de hoy en la zona de la sede. Cada organización/sede tiene un único piloto, cuya inscripción final se conserva sin editar. Esta versión no ofrece cancelación o renovación en la interfaz; un reintento no renueva cuatro semanas. Véase el [contrato HTTP y de datos](../contracts/pilot-enrollment.md).
+
+El servidor fija organización/sede autorizadas, zona, código, actor y fecha del acuerdo; el navegador no envía esos privilegios. Development/testing y las pertenencias marcadas como técnicas por Access permanecen `technical`, incluso si se ensaya toda la confirmación. El marcador técnico es administrativo y no se deduce del nombre ni se acepta desde la interfaz.
+
+La línea base recoge una semana expresa de siete días completos, método de consulta, uno a treinta intentos con éxito/fallo y segundos, minutos de preparación/registro/ayuda del periodo y criterio de nota útil. `baseline.weekStartDate` puede quedar vacío en borrador; confirmar exige una fecha no posterior a `latestBaselineWeekStartDate` —hoy local menos siete días—, devuelta por el servidor. El fin exclusivo es inicio más siete días en la zona autorizada. Si la semana aún no ha terminado, conservar el borrador y confirmar después del cierre, revisando el inicio futuro del piloto.
+
+Campos vacíos no se convierten en cero; los ceros válidos deben introducirse expresamente. Cero búsquedas exitosas produce mediana `null`, no cero segundos. Personas declaradas por rol no son usuarios activos ni una lectura de `lastSeen`. La fecha de inicio del piloto no sustituye el periodo de su línea base ni permite atribuir minutos sin periodo.
 
 ## Reanudar desde remoto
 
@@ -26,6 +38,8 @@ En cada environment se necesitan estas variables de configuración, sin secretos
 | `PILOT_REPORT_BUCKET` | `sedepulso-pilot-765932874577-us-east-1` |
 
 El bootstrap de CI publica ambas variables. Antes de reconfigurarlo, revisar [CI/OIDC](ci-oidc.md), los cambios concretos y las protecciones del environment. La disponibilidad de variables o roles por sí sola no prueba una ejecución exitosa.
+
+La nueva entrega añade el stack `sedepulso-<ambiente>-pilot` y los outputs `PilotFunctionName`, `PilotExportFunctionName` y `PilotTableName`. El bootstrap debe autorizar el quinto stack y la invocación del exportador de ese ambiente antes de comprobar el nuevo observador. No conceder al observador invocación de `PilotFunction`: esa función atiende escrituras de onboarding y tiene un rol distinto del exportador.
 
 Después de aplicar ese bootstrap, una sesión administrativa autorizada puede preparar únicamente los registros vacíos que aún falten:
 
@@ -70,13 +84,26 @@ En cada seguimiento comprobar:
 
 1. Último run del workflow y su conclusión; ante fallo revisar fase y diagnóstico autorizado sin imprimir datos de operación.
 2. `checkedAt` de `<ambiente>/reports/latest.json`: más de **26 horas** de antigüedad se informa como seguimiento desactualizado. Un run reciente sin reporte privado válido tampoco acredita frescura.
-3. Ambiente, `sourceCommit`, `runId`, guardias `billingEnabled=false` y `signupEnabled=true`, stacks completos y tablas activas.
+3. Ambiente, `sourceCommit`, `runId`, guardias `billingEnabled=false` y `signupEnabled=true`, cinco stacks completos y las tablas monitorizadas activas. La metadata de tablas del observador sigue limitada a Access, Assets e Inspections; no obtiene registros privados de Pilot.
 4. `operations.alarmStates` y `alarmNotificationsConfigured`. Una alarma `ALARM` o `INSUFFICIENT_DATA` hace fallar el observador después de guardar el reporte; no se interpreta como cero incidencias.
 5. `status`, cohorte real explícita, semana y faltantes. Mientras no haya inscripción real, continuar preparación y salud técnica con `awaiting-participant`.
 
 La lectura del 19 de noviembre a las 23:23:51 UTC encontró nueve alarmas propias de producción en `OK`, todas sin acciones de notificación. **Estado OK no equivale a avisos entregados.** El observador comunica el fallo mediante la conclusión de GitHub Actions; no envía correos ni incorpora destinatarios. Las notificaciones de GitHub dependen de la configuración de la cuenta y su entrega no está comprobada por este código.
 
-## Contrato del registro privado e inscripción
+El nuevo stack define dos alarmas adicionales, para la API y el exportador de Pilot: el conjunto esperado pasa a once. Su publicación está en verificación; la observación debe descubrir los nombres de las cinco pilas y confirmar que todas las alarmas solicitadas aparecen, sin asumir que el antiguo recuento de nueve sigue describiendo la nueva entrega.
+
+## Fuentes privadas y contrato de cohortes
+
+El observador combina dos fuentes independientes sin escrituras de negocio:
+
+| Fuente | Autoridad y contenido |
+| --- | --- |
+| `<ambiente>/registry.json` en S3 | Registro administrativo existente, conservado sin reemplazar. Mantiene su contrato y permisos de edición administrativos. |
+| Exportador IAM del servicio Pilot | Cohortes confirmadas desde la app y un resumen numérico de línea base por cohorte. No exporta borradores ni textos libres. |
+
+Pilot confirma en una transacción el registro privado por organización/sede y una fila mínima de índice en su misma tabla. El exportador consulta de forma consistente `PILOT#REGISTRY`, con paginación explícita y límites que fallan de forma cerrada. Su evento IAM es `{ "internalAction": "exportPilotRegistry" }`; no tiene rutas HTTP. El observador valida `schemaVersion`, cohortes, relación uno a uno con las líneas base y campos permitidos antes de incorporar datos.
+
+Una fuente incompleta, un fallo de invocación o un conflicto de código/alcance no se convierten en registro vacío ni se resuelven sobrescribiendo entradas. Un conflicto requiere revisar la migración y conservar sus referencias y cortes anteriores. Si una confirmación concurre después de `checkedAt`, se difiere a una observación posterior y se cuenta en `operations.deferredApplicationEnrollments`; no se declara que nunca existió.
 
 El contrato estricto está en [infra/pilot/metrics.mjs](../../infra/pilot/metrics.mjs). La [plantilla pública](../producto/piloto-registro.example.json) contiene una cohorte `technical`, identificadores inexistentes y metas ficticias; sirve para entender y validar el formato. No cargarla como participante ni convertirla automáticamente a `enrolled-real`.
 
@@ -95,17 +122,18 @@ Cada entrada permite únicamente:
 
 `schemaVersion` debe ser `1`; `cohorts` es un array. Campos extra, códigos o ámbitos duplicados y formatos inválidos detienen el cálculo; un error no se convierte en reporte saludable vacío. No cambiar código, alcance, zona o inicio para reescribir la historia de una cohorte existente.
 
-Antes de que una persona autorizada incorpore `enrolled-real`, debe existir evidencia privada de: operación real, alcance y sede consentidos, responsables por rol, permiso para tratar la evidencia mínima, fecha del acuerdo, zona e inicio, objetivos y volumen mínimo acordados, línea base y criterio de utilidad de notas. Conservar referencias sin datos personales a esa evidencia fuera del registro; el esquema no admite nombres, correos, notas, documentos de consentimiento ni campos adicionales.
+La confirmación de la app conserva el alcance y la línea base declarados, las tres declaraciones explícitas, su versión y el actor verificado en Pilot. La clasificación `enrolled-real` de producción expresa esa inscripción del coordinador; no verifica de forma independiente sus respuestas ni demuestra uso, mejora o aceptación de precio. Para una inscripción administrativa siguen siendo necesarias las evidencias privadas de alcance, autoridad, acuerdo, fechas, objetivos y línea base. Conservar referencias sin datos personales fuera del registro S3; su esquema no admite nombres, correos, notas ni campos adicionales.
 
-El registro no se autorrellena a partir de actividad, `plan=pilot`, `signupSource=cognito`, nombres con “prueba” o conteos globales. Las ejecuciones técnicas sólo se clasifican con procedencia controlada. El rol observador puede leer el registro pero **no modificarlo**. La inscripción o corrección exige una identidad administrativa autorizada y revisión del alcance; no hay alta automática, contacto a terceros ni consentimiento presumido.
+Ninguna fuente se autorrellena a partir de actividad, `plan=pilot`, `signupSource=cognito`, nombres con “prueba” o conteos globales. Las ejecuciones técnicas sólo se clasifican con procedencia controlada. El observador puede leer ambas fuentes pero **no modificarlas**. La edición del registro S3 sigue requiriendo identidad administrativa; el onboarding de la app requiere coordinador autorizado y su confirmación explícita. No hay alta por una mera visita, contacto a terceros ni consentimiento presumido.
 
 ## Almacenamiento, privacidad y retención
 
 El bucket `sedepulso-pilot-765932874577-us-east-1` se define privado, con bloqueo de acceso público, ownership del bucket, cifrado AES256, versionado y exigencia de TLS. No tiene entrega pública ni se usa como CDN. El bucket y su sustitución tienen política `Retain`.
 
-| Objeto, relativo al bucket | Contenido y tratamiento |
+| Ubicación privada o clave del bucket | Contenido y tratamiento |
 | --- | --- |
 | `<ambiente>/registry.json` | Registro privado del alcance explícito; sin expiración automática definida |
+| Datos privados en `PilotTable`, fuera de S3 | Borrador/inscripción, descripción, protocolo, criterio, intentos y trazabilidad. Sólo API de coordinadores; conservación y PITR, sin TTL de piloto. |
 | `<ambiente>/reports/latest.json` | Última observación agregada; consume las semanas cerradas ya congeladas |
 | `<ambiente>/reports/daily/<fecha-UTC>/<instante>-<runId>.json` | Observación de la ejecución con corte, procedencia y cobertura; creación condicional |
 | `<ambiente>/reports/weekly/<code>/<startDate>/week-<N>.json` | Primera observación posterior al cierre de cada semana 1 a 4; creación condicional sin sobrescribir |
@@ -116,19 +144,23 @@ La primera semana cerrada se escribe con precondición de ausencia. Si ya existe
 
 El colector proyecta únicamente claves técnicas necesarias, estado y fechas. La presencia de nota/autor se evalúa en DynamoDB con filtros; **el texto de nota y el valor de autor no salen de DynamoDB**. Los identificadores de equipo e inspección se usan sólo en memoria para relacionar datos; los reportes persistidos contienen agregados y códigos de cohorte. El registro privado permite relacionar esos códigos con la organización y sede: no se presenta esta separación como anonimización irreversible. El registro sigue siendo sensible y nunca se publica.
 
+La descripción del alcance, el protocolo de búsqueda, el criterio de nota útil y los valores de actor de la inscripción no salen de Pilot hacia el observador ni S3. `baselineMeasurement` sólo conserva la fuente `participant-declared`, el periodo expreso, fecha de captura y agregados. `period.startDate`, `period.endDateExclusive` y `period.timeZone` identifican siete días locales completos; el fin y la zona los deriva el servidor. `capturedAt` es el instante UTC de admisión al confirmar y no la fecha de observación independiente de las actividades. El criterio exportado es un booleano de presencia, no su texto ni una evaluación de calidad. Las consultas de seguimiento y el esfuerzo posterior continúan sin medir hasta contar con observaciones reales.
+
 ## Permisos y límite de servicio
 
 Cada ambiente tiene un rol OIDC operacional separado, `sedepulso-pilot-<ambiente>-github`. Su confianza se limita al subject inmutable del repositorio y al environment autorizado. Las restricciones de rama del environment siguen siendo necesarias.
 
-El observador recibe consultas `dynamodb:Query` sobre tablas Assets e Inspections propias del ambiente y `DescribeTable` para Access, Assets e Inspections. Descubre outputs de los cuatro stacks propios, observa alarmas en la región y lee el registro/reportes del prefijo propio. Sólo puede escribir reportes cifrados en su prefijo; no puede actualizar el registro ni borrar objetos.
+El observador recibe consultas `dynamodb:Query` sobre tablas Assets e Inspections propias del ambiente y `DescribeTable` para Access, Assets e Inspections. Descubre outputs de los cinco stacks propios, observa alarmas del ambiente y lee el registro/reportes del prefijo propio. Puede invocar únicamente el exportador Pilot, cuyo rol de sólo lectura limita `Query` a `dynamodb:LeadingKeys=PILOT#REGISTRY`. No tiene `Query` directo sobre Pilot ni permiso para invocar su API de escritura. Sólo puede escribir reportes cifrados en su prefijo; no puede actualizar el registro ni borrar objetos.
 
 La lectura de alarmas está limitada al ARN `alarm:sedepulso-<ambiente>-*`; no incluye alarmas compuestas. El catálogo [IAM de CloudWatch](https://docs.aws.amazon.com/service-authorization/latest/reference/list_cloudwatch.html) permite ese alcance para alarmas métricas.
 
-El observador descubre los nombres físicos con `ListStackResources` en los cuatro stacks propios y solicita `DescribeAlarms --alarm-names` con esos nombres exactos. La consulta por `--alarm-name-prefix` exige `alarm:*` en la autorización real; una prueba STS reprodujo el rechazo y comprobó que los nueve nombres explícitos funcionan con el ARN acotado. No ampliar el permiso global para resolver ese caso. Si falta una alarma solicitada, el reporte falla como incompleto.
+El observador descubre los nombres físicos con `ListStackResources` en los cinco stacks propios y solicita `DescribeAlarms --alarm-names` con esos nombres exactos. La consulta por `--alarm-name-prefix` exige `alarm:*` en la autorización real; una prueba STS de la entrega anterior reprodujo el rechazo y comprobó los nombres explícitos con el ARN acotado. La nueva definición añade los dos nombres de Pilot al conjunto esperado de once. No ampliar el permiso global para resolver ese caso. Si falta una alarma solicitada, el reporte falla como incompleto.
 
 No recibe `Scan`, escrituras DynamoDB, acceso a usuarios Cognito, Stripe ni despliegues. Las consultas seleccionan cohortes y sedes explícitas; el rol operacional conserva alcance sobre ambas tablas del ambiente y el límite por cohorte lo aplica el colector. No presentar esto como aislamiento IAM por participante.
 
 Las Lambdas del producto mantienen sus roles y sus límites por servicio. El observador administrativo no introduce lecturas entre tablas en el runtime de Access, Assets o Inspections.
+
+La API Pilot tiene `GetItem`/`PutItem` sólo sobre su tabla y puede invocar Access para autorizar. Las escrituras de inscripción y fila exportable son atómicas dentro de ese dominio. El exportador está separado para que su permiso IAM no pueda usarse para forjar una invocación HTTP a la función que escribe.
 
 ## Lectura correcta de las métricas
 
@@ -142,6 +174,7 @@ Las semanas usan medianoches locales de la zona registrada. El fin es exclusivo;
 | `priorBacklog` | Vencimientos anteriores aún sin cierre al corte |
 | `inventory` | Inventario observado por estado y cobertura temporal disponible |
 | `coverage` | Observación faltante, fechas de alta desconocidas, fechas de cierre ausentes y límites de reconstrucción |
+| `baselineMeasurement` | Resumen declarado en la inscripción, separado de semanas 1–4; `null` si la cohorte administrativa no dispone de esa captura |
 
 Se agregan numeradores y denominadores, separados para `enrolled-real` y `technical`. No se promedian porcentajes. Una razón sin denominador tiene `rate=null`: informar “sin observaciones”, no 0 % ni 100 %. Un dato no observado conserva `null`; no sustituirlo por cero. La participación explícita y el mínimo de observaciones se revisan antes de comparar una meta.
 
@@ -153,7 +186,9 @@ Las consultas son consistentes individualmente pero no una instantánea atómica
 
 Referencias operativas: [actualización aproximada de ItemCount en DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TableDescription.html) y [límites de los eventos programados de GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
-`collectorReadCapacityUnits` mide capacidad de lectura consumida por el colector; no es el coste AWS total. Costes, esfuerzo humano, consultas de historial, utilidad de notas y aceptación comercial permanecen en `unmeasured` hasta incorporar evidencia privada con el método acordado en [piloto operativo](../producto/piloto-operativo.md).
+`collectorReadCapacityUnits` mide sólo la capacidad de las consultas directas a Assets e Inspections. Excluye las lecturas del exportador de Piloto y las consultas de metadatos; no es el coste AWS total. Una línea base capturada conserva su periodo de siete días locales completos, intentos/éxitos/fallos, mediana de los éxitos, minutos y personas declaradas por rol. Cero éxitos tiene mediana `null`; un cero numérico válido refleja entrada explícita, no un faltante convertido. La fuente `participant-declared` y `capturedAt` no equivalen a observación independiente del servidor.
+
+Cuando existe esa captura, `historyLookupBaseline` deja de figurar como ausente en esa cohorte. Esto no mide automáticamente cambios frente a la línea base, duración de búsquedas posteriores, esfuerzo semanal, actividad por persona, utilidad efectiva de notas, coste total o aceptación comercial. Esas variables permanecen sin medir hasta incorporar evidencia privada con el método del [piloto operativo](../producto/piloto-operativo.md). No interpretar la presencia de un criterio como resultado ni las personas declaradas como usuarios activos.
 
 ## Plantilla privada: semana 0 a semana 4
 

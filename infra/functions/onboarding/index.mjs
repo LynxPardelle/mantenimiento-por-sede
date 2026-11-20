@@ -20,6 +20,7 @@ export function signupProfile(attributes) {
   const organizationName = label(attributes['custom:organizationName'], 'organization_name', 120);
   const siteName = label(attributes['custom:siteName'], 'site_name', 120);
   const requestedZone = label(attributes['custom:timeZone'], 'time_zone', 100);
+  if (!/^[A-Za-z][A-Za-z0-9._+-]*(?:\/[A-Za-z0-9._+-]+)*$/.test(requestedZone)) reject('invalid_time_zone');
   let timeZone;
   try { timeZone = new Intl.DateTimeFormat('es-MX', { timeZone: requestedZone }).resolvedOptions().timeZone; }
   catch { reject('invalid_time_zone'); }

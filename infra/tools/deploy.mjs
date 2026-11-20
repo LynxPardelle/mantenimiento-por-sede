@@ -10,7 +10,7 @@ const args = process.argv.slice(2);
 const environment = args[args.indexOf('--environment') + 1];
 if (!['development', 'testing', 'production'].includes(environment)) throw new Error('Especifica --environment development|testing|production.');
 const service = args.includes('--service') ? args[args.indexOf('--service') + 1] : 'all';
-if (!['all', 'platform', 'assets', 'inspections', 'frontend'].includes(service)) throw new Error('--service debe ser platform|assets|inspections|frontend|all.');
+if (!['all', 'platform', 'assets', 'inspections', 'pilot', 'frontend'].includes(service)) throw new Error('--service debe ser platform|assets|inspections|pilot|frontend|all.');
 const region = 'us-east-1'; // ACM para CloudFront vive en esta región.
 const expected = { development: 'development', testing: 'testing', production: 'main' }[environment];
 const branch = execFileSync('git', ['branch', '--show-current'], { cwd: infra, encoding: 'utf8' }).trim();
@@ -76,6 +76,7 @@ if (!bootstrapPlatform && !signupWebAclArn) throw new Error('Configura la ACL de
 const platform = await selected('platform', 'template.yaml', { Environment: environment, AppHost: host, SignupWebAclArn: signupWebAclArn });
 if (bootstrapPlatform) throw new Error('Plataforma inicial creada sin asociación WAF. Ejecuta configure-ci.mjs para autorizar su pool exacto y reejecuta este workflow antes de publicar servicios o frontend.');
 const shared = { Environment: environment, ApiId: platform.ApiId, AuthorizerId: platform.AuthorizerId, AccessFunctionName: platform.AccessFunctionName, AccessFunctionArn: platform.AccessFunctionArn };
+if (service === 'all' || service === 'pilot') await selected('pilot', 'services/pilot.yaml', shared);
 if (['all', 'assets', 'inspections'].includes(service)) {
 const assets = await selected('assets', 'services/assets.yaml', shared);
 if (service !== 'assets') await selected('inspections', 'services/inspections.yaml', { ...shared, AssetsFunctionName: assets.AssetsFunctionName, AssetsFunctionArn: assets.AssetsFunctionArn });

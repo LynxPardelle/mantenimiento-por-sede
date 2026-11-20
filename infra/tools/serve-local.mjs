@@ -5,6 +5,8 @@ import { createAccessHandler } from '../functions/domain/access.mjs';
 import { createAssetsHandler } from '../functions/domain/assets.mjs';
 import { createInspectionsHandler } from '../functions/domain/inspections.mjs';
 import { createMemoryRepositories } from '../functions/domain/memory.mjs';
+import { createPilotHandler } from '../functions/domain/pilot.mjs';
+import { createMemoryPilotRepository } from '../functions/domain/pilot-memory.mjs';
 
 const hostname = '127.0.0.1';
 const port = 4301;
@@ -28,6 +30,7 @@ export async function createDemoHandler() {
   const assets = createAssetsHandler({ repository: repositories.assets, authorize });
   const getAsset = (identity, siteId, assetId) => unwrap(assets({ internalAction: 'getAsset', identity, siteId, assetId }));
   const inspections = createInspectionsHandler({ repository: repositories.inspections, authorize, getAsset });
+  const pilot = createPilotHandler({ repository: createMemoryPilotRepository(), authorize, environment: 'development' });
   const event = (method, rawPath, body, key) => ({ version: '2.0', rawPath, requestContext: { http: { method }, authorizer: { jwt: { claims: { sub: 'demo-coordinator', token_use: 'access' } } } }, headers: key ? { 'idempotency-key': key } : {}, ...(body ? { body: JSON.stringify(body) } : {}) });
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   for (const [siteId, name] of [['north', 'Refrigerador de mostrador'], ['south', 'Congelador principal']]) {
@@ -35,7 +38,7 @@ export async function createDemoHandler() {
     const asset = await unwrap(assets(event('POST', base, { name, type: 'Refrigeración comercial', status: 'operational' }, 'demo-seed')));
     await unwrap(inspections(event('POST', `${base}/${asset.id}/inspections`, { dueDate: today }, 'demo-seed')));
   }
-  return (event) => event.rawPath === '/api/v1/sites' ? access(event) : /\/assets$/.test(event.rawPath) ? assets(event) : inspections(event);
+  return (event) => event.rawPath === '/api/v1/sites' ? access(event) : /\/pilot(?:\/enrollment)?$/.test(event.rawPath) ? pilot(event) : /\/assets$/.test(event.rawPath) ? assets(event) : inspections(event);
 }
 
 export async function createLocalServer({ frontendPort = process.env.SEDEPULSO_FRONTEND_PORT ?? 4200 } = {}) {
