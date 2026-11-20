@@ -7,13 +7,14 @@ const fixture = () => {
   const writes = [];
   const objects = new Map([['production/registry.json', { schemaVersion: 1, cohorts: [] }]]);
   const aws = args => {
-    if (args[0] === 'cloudwatch') return { MetricAlarms: ['platform', 'assets', 'inspections', 'frontend'].map(name => ({ AlarmName: `sedepulso-production-${name}-errors`, StateValue: 'OK', AlarmActions: [] })) };
+    if (args[0] === 'cloudwatch') return { MetricAlarms: ['platform', 'assets', 'inspections', 'pilot', 'frontend'].map(name => ({ AlarmName: `sedepulso-production-${name}-errors`, StateValue: 'OK', AlarmActions: [] })) };
     if (args[0] === 'dynamodb' && args[1] === 'describe-table') return { Table: { TableStatus: 'ACTIVE', ItemCount: 0 } };
     throw new Error('unexpected read');
   };
   return { writes, objects, dependencies: {
     aws,
-    describeStack: name => ({ status: 'UPDATE_COMPLETE', outputs: { AccessTableName: 'access', AssetsTableName: 'assets', InspectionsTableName: 'inspections' }, alarmNames: [`${name}-errors`] }),
+    describeStack: name => ({ status: 'UPDATE_COMPLETE', outputs: { AccessTableName: 'access', AssetsTableName: 'assets', InspectionsTableName: 'inspections', PilotExportFunctionName: 'exporter' }, alarmNames: [`${name}-errors`] }),
+    getEnrollments: async () => ({ schemaVersion: 1, cohorts: [], baselines: [] }),
     readJson: async key => { if (!objects.has(key)) throw new Error('missing'); return objects.get(key); },
     putJson: async (key, value, options) => { writes.push({ key, value, options }); return true; },
     fetchJson: async url => url.endsWith('/api/config') ? { signupEnabled: true, billingEnabled: false } : { status: 'ok' },
@@ -81,7 +82,7 @@ test('latest and totals use the saved weekly cut rather than a later reconstruct
 
 test('describes exact alarms discovered in own stacks instead of requesting the account alarm wildcard', async () => {
   const f = fixture();
-  const names = ['sedepulso-production-platform-errors', 'sedepulso-production-assets-errors', 'sedepulso-production-inspections-errors', 'sedepulso-production-frontend-errors'];
+  const names = ['sedepulso-production-platform-errors', 'sedepulso-production-assets-errors', 'sedepulso-production-inspections-errors', 'sedepulso-production-pilot-errors', 'sedepulso-production-frontend-errors'];
   const calls = [];
   await observePilot({ ...f.dependencies, environment: 'production', describeStack: name => ({ ...f.dependencies.describeStack(name), alarmNames: [names.find(n => n.startsWith(name))] }), aws: args => {
     if (args[0] === 'cloudwatch') { calls.push(args); return { MetricAlarms: names.map(AlarmName => ({ AlarmName, StateValue: 'OK', AlarmActions: [] })) }; }
@@ -90,4 +91,23 @@ test('describes exact alarms discovered in own stacks instead of requesting the 
   assert.ok(calls[0].includes('--alarm-names'));
   assert.ok(!calls[0].includes('--alarm-name-prefix'));
   assert.deepEqual(calls[0].slice(calls[0].indexOf('--alarm-names') + 1, calls[0].indexOf('--region')), names);
+});
+
+test('automatically includes confirmed app cohorts and declared baseline without claiming a measured improvement', async () => {
+  const f = fixture();
+  const code = 'pilot-app';
+  const baseline = { code, capturedAt: '2026-11-01T12:00:00.000Z', source: 'participant-declared', period: { startDate: '2026-10-25', endDateExclusive: '2026-11-01', timeZone: 'Etc/GMT+6' }, historyLookup: { attempts: 2, successful: 1, failed: 1, medianSuccessfulSeconds: 30 }, effortMinutes: { preparation: 10, recording: 5, assistance: 0 }, people: { coordinators: 1, technicians: 0 }, qualityCriterionCaptured: true };
+  const getEnrollments = async () => ({ schemaVersion: 1, cohorts: [{ code, orgId: 'private-org', siteId: 'private-site', timeZone: 'Etc/GMT+6', startDate: '2026-11-02', classification: 'enrolled-real', agreedAt: baseline.capturedAt, goals: { onTimeRateTarget: 0.8, minimumDueInspections: 5 } }], baselines: [baseline] });
+  const r = await observePilot({ ...f.dependencies, getEnrollments, environment: 'production', checkedAt: '2026-11-03T13:00:00.000Z', collect: async () => ({ code, assets: [], inspections: [], readCapacityUnits: 0.5 }) });
+  assert.equal(r.status, 'collecting');
+  assert.deepEqual(r.cohorts[0].baselineMeasurement, baseline);
+  assert.ok(!r.cohorts[0].unmeasured.includes('historyLookupBaseline'));
+  assert.ok(r.cohorts[0].unmeasured.includes('historyLookupMedianSeconds'));
+  assert.ok(!JSON.stringify(r).includes('private-org'));
+});
+
+test('application export failure does not become a healthy empty registry report', async () => {
+  const f = fixture();
+  await assert.rejects(observePilot({ ...f.dependencies, environment: 'production', getEnrollments: async () => { throw new Error('failure'); } }));
+  assert.equal(f.writes.length, 0);
 });

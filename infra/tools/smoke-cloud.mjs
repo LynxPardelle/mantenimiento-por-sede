@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { aws, stackOutputs } from './aws.mjs';
 import { collectCohort } from '../pilot/collect.mjs';
 import { summarizePilot } from '../pilot/metrics.mjs';
+import { verifyPilotEnrollment, removeTechnicalPilot } from './pilot-smoke.mjs';
 
 // Only disposable identities/data in a fresh smoke namespace; never tenant data.
 const args = process.argv.slice(2);
@@ -16,6 +17,7 @@ const prefix = `sedepulso-${environment}`;
 const platform = stackOutputs(`${prefix}-platform`);
 const inventory = stackOutputs(`${prefix}-assets`);
 const maintenance = stackOutputs(`${prefix}-inspections`);
+const pilot = stackOutputs(`${prefix}-pilot`);
 const frontend = stackOutputs(`${prefix}-frontend`);
 const base = frontend.AppUrl;
 const suffix = randomUUID().slice(0, 8);
@@ -54,7 +56,7 @@ async function identity(role, organization, sites) {
   user.token = auth.AuthenticationResult.AccessToken;
   user.idToken = auth.AuthenticationResult.IdToken;
   const item = {
-    pk: { S: `USER#${sub}` }, sk: { S: 'MEMBERSHIP' }, orgId: { S: organization },
+    pk: { S: `USER#${sub}` }, sk: { S: 'MEMBERSHIP' }, orgId: { S: organization }, dataClass: { S: 'technical' },
     sites: { L: sites.map(({ id, role }) => ({ M: { id: { S: id }, name: { S: `Prueba ${id}` }, timeZone: { S: 'America/Mexico_City' }, role: { S: role } } })) },
   };
   aws(['dynamodb', 'put-item', ...cliRegion, '--table-name', platform.AccessTableName, '--item', JSON.stringify(item), '--condition-expression', 'attribute_not_exists(pk)']);
@@ -77,6 +79,7 @@ try {
   expect(await api('/api/v1/sites', { token: coordinator.idToken }), 401, 'ID token rechazado por el servicio');
   assert.equal(expect(await api('/api/v1/sites', { token: coordinator.token }), 200, 'sedes del coordinador').items.length, 2);
   assert.equal(expect(await api('/api/v1/sites', { token: technician.token }), 200, 'sedes del técnico').items.length, 1);
+  await verifyPilotEnrollment({ aws, api, expect, coordinator, technician, other, organization: orgA, tableName: pilot.PilotTableName, exporter: pilot.PilotExportFunctionName });
   const path = '/api/v1/sites/north/assets';
   const body = { name: 'Equipo de prueba automática', type: 'Refrigeración', status: 'operational' };
   expect(await api(path, { token: technician.token, method: 'POST', body, key: 'denied' }), 403, 'rol insuficiente');
@@ -138,6 +141,7 @@ try {
 } finally {
   const cleanupErrors = [];
   const cleanup = async (action) => { try { await action(); } catch (error) { cleanupErrors.push(error.message); } };
+  await cleanup(() => removeTechnicalPilot({ aws, tableName: pilot.PilotTableName, organization: orgA }));
   for (const id of assetIds) await cleanup(() => deletePartition(maintenance.InspectionsTableName, `ORG#${orgA}#SITE#north#ASSET#${id}`));
   for (const org of [orgA, orgB]) {
     await cleanup(() => deletePartition(inventory.AssetsTableName, `ORG#${org}#SITE#north`));

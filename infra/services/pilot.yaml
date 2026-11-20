@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SedePulso - inscripcion y linea base del piloto
+Parameters:
+  Environment: {Type: String, AllowedValues: [development, testing, production]}
+  ApiId: {Type: String}
+  AuthorizerId: {Type: String}
+  AccessFunctionName: {Type: String}
+  AccessFunctionArn: {Type: String}
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Architectures: [arm64]
+    MemorySize: 256
+    Timeout: 20
+    PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/sedepulso-${Environment}-runtime-boundary'
+    LoggingConfig: {LogFormat: JSON}
+    Tags: {Product: sedepulso, Environment: !Ref Environment}
+Resources:
+  PilotTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{AttributeName: pk, AttributeType: S}, {AttributeName: sk, AttributeType: S}]
+      KeySchema: [{AttributeName: pk, KeyType: HASH}, {AttributeName: sk, KeyType: RANGE}]
+      PointInTimeRecoverySpecification: {PointInTimeRecoveryEnabled: true}
+      SSESpecification: {SSEEnabled: true}
+  PilotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../.artifacts/domain/
+      Handler: pilot.handler
+      Environment:
+        Variables:
+          PILOT_TABLE_NAME: !Ref PilotTable
+          ACCESS_FUNCTION_NAME: !Ref AccessFunctionName
+          ENVIRONMENT: !Ref Environment
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [dynamodb:GetItem, dynamodb:PutItem]
+              Resource: !GetAtt PilotTable.Arn
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !Ref AccessFunctionArn
+  PilotExportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../.artifacts/domain/
+      Handler: pilot-export.handler
+      Environment:
+        Variables:
+          PILOT_TABLE_NAME: !Ref PilotTable
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt PilotTable.Arn
+              Condition:
+                ForAllValues:StringEquals:
+                  dynamodb:LeadingKeys: ['PILOT#REGISTRY']
+                'Null':
+                  dynamodb:LeadingKeys: 'false'
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties: {ApiId: !Ref ApiId, IntegrationType: AWS_PROXY, IntegrationUri: !GetAtt PilotFunction.Arn, PayloadFormatVersion: '2.0'}
+  ReadRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'GET /api/v1/sites/{siteId}/pilot'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  DraftRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'PUT /api/v1/sites/{siteId}/pilot'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  EnrollRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiId
+      RouteKey: 'POST /api/v1/sites/{siteId}/pilot/enrollment'
+      Target: !Sub 'integrations/${Integration}'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref AuthorizerId
+  ApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PilotFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/*/api/v1/sites/*/pilot*'
+  PilotLogs:
+    Type: AWS::Logs::LogGroup
+    Properties: {LogGroupName: !Sub '/aws/lambda/${PilotFunction}', RetentionInDays: 14}
+  PilotExportLogs:
+    Type: AWS::Logs::LogGroup
+    Properties: {LogGroupName: !Sub '/aws/lambda/${PilotExportFunction}', RetentionInDays: 14}
+  PilotErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref PilotFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  PilotExportErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{Name: FunctionName, Value: !Ref PilotExportFunction}]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+Outputs:
+  PilotFunctionName: {Value: !Ref PilotFunction}
+  PilotFunctionArn: {Value: !GetAtt PilotFunction.Arn}
+  PilotExportFunctionName: {Value: !Ref PilotExportFunction}
+  PilotExportFunctionArn: {Value: !GetAtt PilotExportFunction.Arn}
+  PilotTableName: {Value: !Ref PilotTable}

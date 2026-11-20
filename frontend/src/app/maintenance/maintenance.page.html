@@ -64,6 +64,11 @@
         <span aria-hidden="true">↺</span> Historial
       </button>
     </nav>
+    @if (store.site()?.role === 'coordinator') {
+      <a class="text-link" routerLink="/app/piloto"
+        >Inscribir o consultar el piloto <span aria-hidden="true">↗</span></a
+      >
+    }
     <p class="nav-note">El trabajo pertenece a una sede.<br />El registro conserva su contexto.</p>
   </aside>
   <div class="workspace-content">

@@ -44,8 +44,19 @@ try {
     if (response.status !== 200) throw new Error('https_failed');
     return response.json();
   };
+  const getEnrollments = async functionName => {
+    if (typeof functionName !== 'string' || !functionName.startsWith(`sedepulso-${environment}-pilot-PilotExportFunction-`)) throw new Error('pilot_enrollment_export_unavailable');
+    const file = join(out, 'enrollments.json');
+    try {
+      const metadata = aws(['lambda', 'invoke', '--function-name', functionName, '--region', 'us-east-1', '--payload', JSON.stringify({ internalAction: 'exportPilotRegistry' }), '--cli-binary-format', 'raw-in-base64-out', file]);
+      if (metadata.FunctionError) throw new Error('pilot_enrollment_export_failed');
+      const result = JSON.parse(await readFile(file, 'utf8'));
+      if (result.statusCode !== 200) throw new Error('pilot_enrollment_export_failed');
+      return JSON.parse(result.body);
+    } finally { await rm(file, { force: true }); }
+  };
   phase = 'observation';
-  const report = await observePilot({ aws, describeStack, readJson, putJson, fetchJson, collect: collectCohort, environment, runId, sourceCommit: process.env.GITHUB_SHA || null });
+  const report = await observePilot({ aws, describeStack, readJson, putJson, fetchJson, getEnrollments, collect: collectCohort, environment, runId, sourceCommit: process.env.GITHUB_SHA || null });
   // Public repository: neither tenant metrics nor the registry belong in logs/artifacts.
   console.log(JSON.stringify({ environment, observer: 'passed', billingEnabled: false, privateReportSaved: true }));
 } catch (error) {

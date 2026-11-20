@@ -24,7 +24,7 @@ test('a separate OIDC observer can query only business tables and cannot change 
     const statements = role.Policies[0].PolicyDocument.Statement;
     const metadata = statements.find(s => s.Sid === 'DiscoverOwnStackOutputs');
     assert.deepEqual(metadata.Action, ['cloudformation:DescribeStacks', 'cloudformation:ListStackResources']);
-    assert.equal(metadata.Resource.length, 4);
+    assert.equal(metadata.Resource.length, 5);
     assert.ok(metadata.Resource.every(arn => arn.includes(`:stack/sedepulso-${env.toLowerCase()}-`)));
     const query = statements.find(s => s.Sid === 'ReadEnrolledSiteData');
     assert.deepEqual(query.Action, ['dynamodb:Query']);
@@ -38,6 +38,10 @@ test('a separate OIDC observer can query only business tables and cannot change 
     assert.match(writes[0].Resource, /\/reports\/\*$/);
     assert.ok(!JSON.stringify(statements).includes('s3:DeleteObject'));
     const actions = statements.flatMap(s => [].concat(s.Action));
-    assert.ok(!actions.some(a => /dynamodb:(Put|Update|Delete)|cognito|lambda:Invoke|cloudformation:(Create|Execute)/.test(a)));
+    assert.ok(!actions.some(a => /dynamodb:(Put|Update|Delete)|cognito|cloudformation:(Create|Execute)/.test(a)));
+    const exporter = statements.find(s => s.Sid === 'ReadApplicationEnrollments');
+    assert.deepEqual(exporter.Action, ['lambda:InvokeFunction']);
+    assert.equal(exporter.Resource, `arn:aws:lambda:us-east-1:123456789012:function:sedepulso-${env.toLowerCase()}-pilot-PilotExportFunction-*`);
+    assert.ok(!JSON.stringify(statements).includes('pilot-PilotFunction-'));
   }
 });

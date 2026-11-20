@@ -47,7 +47,7 @@ if (!backendOnly) await hashDirectory(join(out, 'frontend'), '', 'frontend');
 await hashDirectory(join(out, 'domain'), '', 'domain');
 await hashDirectory(join(out, 'onboarding'), '', 'onboarding');
 for (const name of ['health', 'config']) await hashDirectory(join(out, name), '', name);
-for (const template of ['template.yaml', 'services/assets.yaml', 'services/inspections.yaml', 'frontend.yaml']) {
+for (const template of ['template.yaml', 'services/assets.yaml', 'services/inspections.yaml', 'services/pilot.yaml', 'frontend.yaml']) {
   files.push({ path: template, sha256: createHash('sha256').update(await readFile(join(infra, template))).digest('hex') });
 }
 const release = createHash('sha256').update(JSON.stringify(files)).digest('hex').slice(0, 16);
