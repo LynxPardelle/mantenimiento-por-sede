@@ -1,0 +1,443 @@
+<a class="skip-link" href="#revisiones">Ir a las revisiones</a>
+<header class="site-header">
+  <a class="brand" routerLink="/"
+    ><span class="brand-mark" aria-hidden="true">∿</span>SedePulso<span
+      class="brand-dot"
+      aria-hidden="true"
+      >.</span
+    ></a
+  ><a class="text-link" routerLink="/app/piloto">Tu piloto <span aria-hidden="true">↗</span></a>
+</header>
+<main id="revisiones" class="reviews-layout">
+  <aside class="reviews-intro">
+    <p class="eyebrow">SEGUIMIENTO DEL PILOTO</p>
+    <h1>Una semana.<br />Lo aprendido.<br /><em>El siguiente paso.</em></h1>
+    <p>
+      Conserva lo que observaste y compara las mediciones con tu punto de partida. Una revisión por
+      cada semana, en la zona de tu sede.
+    </p>
+    <div class="intro-facts">
+      <p><strong>4 revisiones</strong><span>Ventanas de siete días.</span></p>
+      <p><strong>Tu referencia</strong><span>Alcance y método de la línea base.</span></p>
+      <p><strong>Sin cobros</strong><span>Sin tarjeta ni conversión automática.</span></p>
+    </div>
+    <p>
+      Los campos vacíos significan «sin medir». Introduce cero sólo si lo observaste. Registra
+      conclusiones sin nombres de personas ni contenido privado del historial.
+    </p>
+  </aside>
+  <section class="reviews-panel" aria-label="Revisiones semanales" [attr.aria-busy]="busy()">
+    @if (error()) {
+      <div class="message error" role="alert" tabindex="-1">
+        <p>{{ error() }}</p>
+        @if (issues().length) {
+          <ul>
+            @for (issue of issues(); track $index) {
+              <li>{{ issue }}</li>
+            }
+          </ul>
+        }
+        @if (conflict()) {
+          <button type="button" class="text-link" [disabled]="busy()" (click)="reload()">
+            Recargar la versión guardada</button
+          ><small>Descarta los cambios locales sin guardar.</small>
+        }
+      </div>
+    }
+    @if (notice()) {
+      <p class="message success" role="status">{{ notice() }}</p>
+    }
+    @if (busy()) {
+      <p role="status" class="muted">Consultando y guardando tu revisión…</p>
+    }
+    @if (context(); as current) {
+      <div class="site-heading">
+        <div>
+          <p class="eyebrow">SEDE DEL PILOTO</p>
+          <h2>{{ current.site.name }}</h2>
+          <small>{{ current.site.timeZone }}</small>
+        </div>
+        @if (eligibleSites().length > 1) {
+          <div class="field">
+            <label for="review-site">Elegir sede</label
+            ><select
+              id="review-site"
+              [value]="current.site.id"
+              [disabled]="busy()"
+              (change)="selectSite($event)"
+            >
+              @for (site of eligibleSites(); track site.id) {
+                <option [value]="site.id">{{ site.name }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+      @if (current.enrollment?.classification === 'technical' || auth.isDemo()) {
+        <p class="help-note">
+          <strong>Evaluación técnica.</strong> Estas revisiones comprueban el recorrido; no
+          representan semanas de una operación real.
+        </p>
+      }
+      @if (current.enrollment?.status !== 'enrolled') {
+        <h2>Primero inscribe tu piloto</h2>
+        <p>Define alcance, objetivos y línea base para abrir las cuatro ventanas de seguimiento.</p>
+        <a class="button primary" routerLink="/app/piloto">Ir a la inscripción</a>
+      } @else {
+        <nav class="weeks" aria-label="Semanas del piloto">
+          @for (week of current.weeks; track week.week) {
+            <button
+              type="button"
+              [class.active]="week.week === selectedWeek()"
+              [attr.aria-current]="week.week === selectedWeek() ? 'step' : null"
+              [disabled]="busy()"
+              (click)="changeWeek(week.week)"
+            >
+              <strong>Semana {{ week.week }}</strong
+              ><span>{{
+                week.review?.status === 'confirmed' ? 'Confirmada' : statusLabel(week.status)
+              }}</span>
+            </button>
+          }
+        </nav>
+        @if (currentWeek(); as week) {
+          <div class="week-heading">
+            <div>
+              <p class="eyebrow">REVISIÓN SEMANAL</p>
+              <h2>Semana {{ week.week }}</h2>
+              <p>
+                {{ localDate(week.period.startDate) }} —
+                {{ localDate(periodLastDay(week.period.endDateExclusive)) }}
+              </p>
+              <small>{{ week.period.timeZone }} · {{ statusLabel(week.status) }}</small>
+            </div>
+            <button type="button" class="text-link" [disabled]="busy()" (click)="reload()">
+              Recargar datos guardados
+            </button>
+          </div>
+          @if (week.status === 'future') {
+            <p class="help-note">
+              Esta semana todavía no comienza. Podrás guardar su borrador a partir del
+              {{ localDate(week.period.startDate) }}.
+            </p>
+          } @else {
+            @if (confirmed()) {
+              <p class="help-note">
+                <strong>Revisión confirmada.</strong> Su contenido queda conservado.
+                @if (week.review?.confirmedAt; as capturedAt) {
+                  Capturada el
+                  <time [attr.datetime]="capturedAt">{{
+                    capturedTime(capturedAt, week.period.timeZone)
+                  }}</time>.
+                }
+              </p>
+            } @else if (week.status === 'open') {
+              <p class="help-note">
+                La semana está en curso. Puedes guardar un borrador y confirmarlo cuando termine el
+                {{ localDate(periodLastDay(week.period.endDateExclusive)) }}.
+              </p>
+            }
+            <div class="baseline-reference">
+              <h3>Tu método de referencia</h3>
+              <p>{{ current.enrollment?.baseline?.historyProtocol }}</p>
+              <small
+                >Criterio de nota útil:
+                {{ current.enrollment?.baseline?.noteUsefulnessCriterion }}</small
+              >
+            </div>
+            <form novalidate (submit)="$event.preventDefault()">
+              <div class="field">
+                <label for="review-summary">Qué observaste esta semana</label
+                ><textarea id="review-summary" rows="3" [formField]="reviewForm.summary"></textarea
+                ><small
+                  >Resumen y siguiente acción son necesarios al confirmar. Máximo 1000 caracteres
+                  cada uno.</small
+                >
+              </div>
+              <div class="field">
+                <label for="review-next">Siguiente acción</label
+                ><textarea id="review-next" rows="2" [formField]="reviewForm.nextAction"></textarea>
+              </div>
+              <fieldset>
+                <legend>Consultas del historial</legend>
+                <p>
+                  Repite el método de la línea base, especialmente al terminar la semana 4. Si no
+                  realizaste consultas, deja la lista vacía.
+                </p>
+                <div class="field">
+                  <label for="review-protocol">¿Conservaste el mismo alcance y método?</label
+                  ><select id="review-protocol" [formField]="reviewForm.sameProtocol">
+                    <option value="">Sin declarar</option>
+                    <option value="yes">Sí, el mismo alcance y método</option>
+                    <option value="no">No, hubo cambios</option></select
+                  ><small>La comparación requiere declarar el mismo alcance y método.</small>
+                </div>
+                @for (attempt of reviewForm.historyAttempts; track $index; let i = $index) {
+                  <div class="attempt-row">
+                    <strong>Consulta {{ i + 1 }}</strong>
+                    <div class="field">
+                      <label [for]="'review-result-' + i">Resultado</label
+                      ><select [id]="'review-result-' + i" [formField]="attempt.success">
+                        <option value="">Sin medir</option>
+                        <option value="yes">Encontrado</option>
+                        <option value="no">No encontrado</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label [for]="'review-seconds-' + i">Segundos</label
+                      ><input
+                        [id]="'review-seconds-' + i"
+                        type="text"
+                        inputmode="decimal"
+                        [formField]="attempt.seconds"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      class="text-link remove"
+                      [disabled]="!canEdit()"
+                      (click)="removeAttempt(i)"
+                      [attr.aria-label]="'Quitar consulta ' + (i + 1)"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                }
+                @if (!confirmed()) {
+                  <button
+                    type="button"
+                    class="text-link"
+                    [disabled]="!canEdit() || model().historyAttempts.length >= 30"
+                    (click)="addAttempt()"
+                  >
+                    + Agregar consulta medida
+                  </button>
+                }
+              </fieldset>
+              <fieldset>
+                <legend>Esfuerzo durante estos siete días</legend>
+                <p>
+                  Minutos declarados por categoría. Puedes dejar sin medir lo que no registraste.
+                </p>
+                <div class="effort-grid">
+                  <div class="field">
+                    <label for="review-preparation">Preparación (min)</label
+                    ><input
+                      id="review-preparation"
+                      type="text"
+                      inputmode="decimal"
+                      [formField]="reviewForm.preparationMinutes"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="review-recording">Registro (min)</label
+                    ><input
+                      id="review-recording"
+                      type="text"
+                      inputmode="decimal"
+                      [formField]="reviewForm.recordingMinutes"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="review-assistance">Ayuda (min)</label
+                    ><input
+                      id="review-assistance"
+                      type="text"
+                      inputmode="decimal"
+                      [formField]="reviewForm.assistanceMinutes"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Utilidad de las notas</legend>
+                <p>
+                  Evalúa las notas con el criterio fijado al inscribirte. Registra ambos conteos o
+                  deja ambos sin medir.
+                </p>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="review-notes">Notas evaluadas</label
+                    ><input
+                      id="review-notes"
+                      type="text"
+                      inputmode="numeric"
+                      [formField]="reviewForm.reviewedNotes"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="review-useful">Notas útiles</label
+                    ><input
+                      id="review-useful"
+                      type="text"
+                      inputmode="numeric"
+                      [formField]="reviewForm.usefulNotes"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+              @if (!confirmed()) {
+                <div class="review-actions">
+                  <button
+                    type="button"
+                    class="button secondary"
+                    [disabled]="!canEdit()"
+                    (click)="saveDraft()"
+                  >
+                    Guardar borrador semanal</button
+                  ><small>{{
+                    dirty() ? 'Tienes cambios sin guardar.' : 'La revisión guardada está al día.'
+                  }}</small>
+                </div>
+                @if (week.status === 'closed') {
+                  <label class="attestation"
+                    ><input type="checkbox" [formField]="attestationForm.attested" /><span
+                      >Confirmo que esta revisión corresponde a la semana indicada y que las
+                      mediciones capturadas son las observadas. Los campos sin medir permanecen sin
+                      dato.</span
+                    ></label
+                  ><button
+                    type="button"
+                    class="button primary confirm"
+                    [disabled]="!canEdit()"
+                    (click)="confirm()"
+                  >
+                    Confirmar revisión de la semana {{ week.week }}</button
+                  ><small
+                    >La revisión confirmada se conserva sin editar y no inicia otro periodo.</small
+                  >
+                }
+              }
+            </form>
+            @if (week.comparison; as comparison) {
+              <section class="comparison" aria-label="Comparación con la línea base">
+                <p class="eyebrow">DOS PERIODOS, UNA REFERENCIA</p>
+                <h2>Comparación con la línea base</h2>
+                <p>
+                  Línea base: {{ localDate(current.enrollment!.baseline.weekStartDate) }}. Revisión:
+                  semana {{ week.week }}. Mediciones declaradas por coordinación.
+                </p>
+                @if (!comparison.comparable) {
+                  <p class="help-note">
+                    {{
+                      comparison.reason === 'different-protocol'
+                        ? 'Cambió el alcance o el método. Se muestran los valores, sin calcular diferencias.'
+                        : 'Falta declarar el mismo alcance y método. Las diferencias no están disponibles.'
+                    }}
+                  </p>
+                }
+                <div class="comparison-scroll">
+                  <table>
+                    <caption>
+                      Consultas de historial
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Medición</th>
+                        <th scope="col">Línea base</th>
+                        <th scope="col">Semana {{ week.week }}</th>
+                        <th scope="col">Variación</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Mediana de éxitos</th>
+                        <td>{{ value(comparison.history.baselineMedianSeconds, ' s') }}</td>
+                        <td>{{ value(comparison.history.reviewMedianSeconds, ' s') }}</td>
+                        <td>{{ value(comparison.history.deltaSeconds, ' s') }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Consultas resueltas</th>
+                        <td>
+                          {{ rate(comparison.history.baselineSuccessRate)
+                          }}<small
+                            >{{ baselineAttempts().successful }} de
+                            {{ baselineAttempts().total }} consultas</small
+                          >
+                        </td>
+                        <td>
+                          {{ rate(comparison.history.reviewSuccessRate)
+                          }}<small
+                            >{{ reviewedAttempts().successful }} de
+                            {{ reviewedAttempts().total }} consultas</small
+                          >
+                        </td>
+                        <td>{{ value(comparison.history.successRateDeltaPoints, ' pp') }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <small
+                  >Cambio relativo de la mediana:
+                  {{ value(comparison.history.changePercent, ' %') }}. Requiere consultas exitosas
+                  en ambos periodos y una base mayor que cero.</small
+                >
+                <div class="comparison-scroll">
+                  <table>
+                    <caption>
+                      Esfuerzo declarado (minutos)
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Categoría</th>
+                        <th scope="col">Línea base</th>
+                        <th scope="col">Semana {{ week.week }}</th>
+                        <th scope="col">Variación</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of effortRows; track row.key) {
+                        <tr>
+                          <th scope="row">{{ row.label }}</th>
+                          <td>{{ value(comparison.effortMinutes[row.key].baseline) }}</td>
+                          <td>{{ value(comparison.effortMinutes[row.key].review) }}</td>
+                          <td>{{ value(comparison.effortMinutes[row.key].delta) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                @if (comparison.noteUsefulness.reviewed === null) {
+                  <p>Utilidad de las notas: sin medir esta semana.</p>
+                } @else {
+                  <p>
+                    Notas útiles: {{ value(comparison.noteUsefulness.useful) }} de
+                    {{ value(comparison.noteUsefulness.reviewed) }} evaluadas ·
+                    {{
+                      comparison.noteUsefulness.reviewed === 0
+                        ? 'Sin tasa: ninguna nota evaluada'
+                        : rate(comparison.noteUsefulness.rate)
+                    }}.
+                  </p>
+                }
+                <small>La línea base conserva el criterio, sin una tasa previa de calidad.</small>
+                <p class="help-note">
+                  Una variación negativa indica menos segundos o minutos declarados. Estas
+                  diferencias entre periodos no demuestran por sí solas ahorro, mejora causal ni
+                  eficiencia ajustada por carga de trabajo. Los cortes automáticos de inspecciones
+                  se conservan por separado.
+                </p>
+              </section>
+            } @else if (confirmed()) {
+              <p class="help-note">
+                La comparación estará disponible al recuperar la revisión confirmada.
+              </p>
+            }
+          }
+        }
+      }
+    } @else if (!busy()) {
+      <h2>
+        {{
+          eligibleSites().length
+            ? 'No pudimos cargar las revisiones'
+            : 'Necesitas una sede con coordinación'
+        }}
+      </h2>
+      <p>Vuelve a tu operación para comprobar el acceso o reintenta la consulta.</p>
+      <button type="button" class="button secondary" (click)="initialize()">
+        Volver a consultar
+      </button>
+    }
+  </section>
+</main>

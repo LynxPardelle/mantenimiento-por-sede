@@ -1,16 +1,18 @@
 import { fail, guarded, httpRoute, identifier, identityOf, jsonBody, response, scopeFor } from './common.mjs';
 import { enrollmentRecord, normalizePilotData, pilotAgreements, pilotClassification, pilotDates, pilotRevision, publicPilot } from './pilot-model.mjs';
+import { pilotReviews } from './pilot-reviews.mjs';
 
 export function createPilotHandler({ repository, authorize, now = () => new Date(), environment = process.env.ENVIRONMENT }) {
   if (!['development', 'testing', 'production'].includes(environment)) throw new Error('Pilot environment is not configured');
   return guarded(async event => {
     const identity = identityOf(event);
-    const { method, match } = httpRoute(event, /^\/api\/v1\/sites\/([A-Za-z0-9_-]{1,128})\/pilot(\/enrollment)?$/);
+    const { method, match } = httpRoute(event, /^\/api\/v1\/sites\/([A-Za-z0-9_-]{1,128})\/pilot(\/enrollment|\/reviews(?:\/[1-4](?:\/confirmation)?)?)?$/);
     const siteId = identifier(match[1], 'site');
     const authorization = await authorize(identity, siteId, ['coordinator']);
     const scope = scopeFor(authorization, siteId);
     if (authorization.site.role !== 'coordinator') fail(403, 'forbidden');
     const currentTime = now();
+    if(match[2]?.startsWith('/reviews')) return pilotReviews({event,method,suffix:match[2],scope,authorization,identity,repository,now:currentTime});
     const dates = pilotDates(currentTime, authorization.site.timeZone);
     if (method === 'GET' && !match[2]) {
       const { id, name, timeZone, role } = authorization.site;
