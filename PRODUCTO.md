@@ -37,7 +37,7 @@ El servicio **Pilot** conserva esa información y la inscripción final, única 
 
 El [contrato del onboarding](docs/contracts/pilot-enrollment.md) define límites y reintentos. La [entrega de esta ampliación](docs/releases/2026-11-19-onboarding-piloto.md) registra la publicación y verificación aprobadas en los tres ambientes.
 
-La ampliación de revisiones permite capturar desde la app hallazgos y siguiente acción de cada semana, guardar un borrador durante el periodo y confirmar cuando termine. Se pueden declarar consultas medidas, minutos y notas evaluadas/útiles, conservando lo no medido como faltante. La comparación con la línea base requiere declarar el mismo alcance y método; muestra diferencias entre periodos, sin atribuir ahorro causal. Una revisión confirmada queda fija. Su [contrato](docs/contracts/pilot-weekly-reviews.md) separa estas declaraciones de las métricas automáticas y conserva Stripe deshabilitado; su publicación está en verificación.
+Las revisiones publicadas permiten capturar desde la app hallazgos y siguiente acción de cada semana, guardar un borrador durante el periodo y confirmar cuando termine. Se pueden declarar consultas medidas, minutos y notas evaluadas/útiles, conservando lo no medido como faltante. La comparación con la línea base requiere declarar el mismo alcance y método; muestra diferencias entre periodos, sin atribuir ahorro causal. Una revisión confirmada queda fija. Su [contrato](docs/contracts/pilot-weekly-reviews.md) separa estas declaraciones de las métricas automáticas y conserva Stripe deshabilitado; el [cierre de entrega](docs/releases/2026-11-19-revisiones-piloto.md) acredita la verificación de los tres ambientes.
 
 ## Entrega e identidad
 
