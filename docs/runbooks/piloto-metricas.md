@@ -84,13 +84,17 @@ El workflow [.github/workflows/piloto.yml](../../.github/workflows/piloto.yml) d
 
 Para acreditar la programación, consultar `gh run list --workflow piloto.yml --event schedule` y verificar un run exitoso de `main`. Su SHA y número de intento deben coincidir con `sourceCommit` y `runId` del reporte privado. Un `workflow_dispatch`, incluso reciente y exitoso, sólo acredita la ejecución manual. Si no existe ningún run `schedule`, el problema precede al job: comprobar rama predeterminada, workflow activo, cron publicado antes del corte y permisos/estado del actor. La API no expone una causa interna del scheduler; no atribuir esa ausencia a OIDC o AWS sin un job fallido que lo demuestre.
 
+El [cierre del 20 de noviembre](../releases/2026-11-20-observador-programado.md) conserva el primer `schedule` exitoso con recibo privado y lo separa del respaldo nuevo, que seguía pendiente de observación al corte documentado. Para actualizar ese estado exigir un run programado real y su reporte coincidente; la publicación del YAML no sustituye esa evidencia.
+
 El heartbeat de Codex `sedepulso-seguimiento-del-piloto` está activo en este chat a las **08:00 GMT-6**. Revisa el último resultado, frescura y pendientes; depende de la aplicación local y de sus accesos, sin SLA. No sustituye al workflow ni crea semanas de uso o participantes.
 
 Su prompt se actualizó mediante la herramienta de automatizaciones durante TASK-021: conserva horario, chat y estado activo, y ahora comprueba cinco stacks, once alarmas y `weeklyReviews` junto a sus comparaciones. Distingue estas declaraciones de los snapshots automáticos, conserva faltantes y no escribe mediciones o participantes inventados.
 
+TASK-022 actualiza ese mismo heartbeat para revisar el último `schedule` exitoso de forma independiente. Su ausencia o antigüedad mayor de 26 horas se informa aunque un run manual o de publicación haya dejado un reporte fresco. Conserva el horario y las demás guardas; no crea otra automatización ni convierte el heartbeat local en una prueba del scheduler de GitHub.
+
 En cada seguimiento comprobar:
 
-1. Último run del workflow y su conclusión; ante fallo revisar fase y diagnóstico autorizado sin imprimir datos de operación.
+1. Último run del workflow y último run exitoso con `event=schedule`, por separado. Si no existe el programado o supera 26 horas, informar la ausencia aunque haya una ejecución manual reciente. Ante fallo revisar fase y diagnóstico autorizado sin imprimir datos de operación.
 2. `checkedAt` de `<ambiente>/reports/latest.json`: más de **26 horas** de antigüedad se informa como seguimiento desactualizado. Un run reciente sin reporte privado válido tampoco acredita frescura.
 3. Ambiente, `sourceCommit`, `runId`, guardias `billingEnabled=false` y `signupEnabled=true`, cinco stacks completos y las tablas monitorizadas activas. La metadata de tablas del observador sigue limitada a Access, Assets e Inspections; no obtiene registros privados de Pilot.
 4. `operations.alarmStates` y `alarmNotificationsConfigured`. Una alarma `ALARM` o `INSUFFICIENT_DATA` hace fallar el observador después de guardar el reporte; no se interpreta como cero incidencias.
