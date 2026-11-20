@@ -17,7 +17,8 @@ npm --prefix frontend test -- --watch=false
 npm --prefix frontend run build
 node --test infra/test/*.test.mjs
 node --test infra/ci/*.test.mjs
-cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/frontend.yaml
+node --test infra/pilot/*.test.mjs
+cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/services/pilot.yaml infra/frontend.yaml
 node infra/tools/package.mjs
 ```
 
@@ -34,7 +35,7 @@ $env:COGNITO_WAF_POOL_READY = 'true'
 node infra/tools/deploy.mjs --environment development
 ```
 
-Usar `true` únicamente después de que `configure-ci.mjs` haya descubierto y autorizado el ARN real del pool. El comando modifica AWS y despliega plataforma → Assets → Inspections → frontend. Conservar región, nombres y outputs de los stacks. El dominio esperado es `https://sedepulso-development.lynxpardelle.com`; comprobar emisión del certificado, DNS y CloudFront antes de informar disponibilidad.
+Usar `true` únicamente después de que `configure-ci.mjs` haya descubierto y autorizado el ARN real del pool. El comando modifica AWS y despliega plataforma → Pilot → Assets → Inspections → frontend. Conservar región, nombres y outputs de los cinco stacks. El dominio esperado es `https://sedepulso-development.lynxpardelle.com`; comprobar emisión del certificado, DNS y CloudFront antes de informar disponibilidad.
 
 La creación inicial de cada ambiente tiene dos fases:
 
@@ -60,9 +61,16 @@ $env:COGNITO_WAF_POOL_READY = 'true'
 node infra/tools/deploy.mjs --environment development --service assets
 ```
 
+Para actualizar sólo la inscripción y el exportador del piloto con sus contratos actuales:
+
+```powershell
+$env:COGNITO_WAF_POOL_READY = 'true'
+node infra/tools/deploy.mjs --environment development --service pilot
+```
+
 Para preparar sólo backend sin recompilar Angular, usa `node infra/tools/package.mjs --backend-only`.
 
-Los valores de `--service` son `platform`, `assets`, `inspections`, `frontend` y `all`. La entrega de un servicio no requiere recrear sus datos. Si cambia un contrato o output consumido, coordinar la actualización de sus dependientes.
+Los valores de `--service` son `platform`, `pilot`, `assets`, `inspections`, `frontend` y `all`. La entrega de un servicio no requiere recrear sus datos. Si cambia un contrato o output consumido, coordinar la actualización de sus dependientes. Antes de incorporar Pilot a un ambiente existente, aplicar el bootstrap actualizado para autorizar su stack y la invocación del exportador exacto; no ampliar permisos globales para evitar esa preparación.
 
 ## Identidades y smoke
 
@@ -74,6 +82,10 @@ node --use-system-ca infra/tools/smoke-cloud.mjs
 
 El smoke crea identidades efímeras de dos organizaciones y sedes y limpia sus recursos de prueba en `finally`. Comprobar también su resultado y limpieza; no asumir que un proceso interrumpido alcanzó el bloque final. No publicar contraseñas o tokens en el reporte.
 
+La versión ampliada ejecuta 41 comprobaciones de dominio, incluidas autorización de Pilot, borrador incompleto, revisión e idempotencia, objetivos y semana base, declaraciones explícitas, confirmación final, aislamiento y exportación privada. Los fixtures llevan procedencia `technical` en la pertenencia administrada de Access; no se clasifican por nombre y no se convierten en cohortes reales en producción.
+
+La limpieza del piloto se limita al namespace efímero propio `smoke-a-<8 hex>` y a la tabla Pilot descubierta del ambiente. Comprueba las dos claves privadas/de índice con lectura consistente, rechaza una inscripción real, valida organización/sede de la fila exportable y usa eliminación condicional. Después confirma que ambas filas ya no existen. Un fallo o una interrupción no autoriza borrar otras cohortes o tablas. El helper y sus guardas se encuentran en `infra/tools/pilot-smoke.mjs`.
+
 Para asignar una sede a una persona que ya existe en Cognito:
 
 ```sh
@@ -83,6 +95,8 @@ node infra/tools/provision-member.mjs --environment development --username <usua
 El script no crea usuarios ni envía correos y no cambia la organización de una membresía existente. `--role` acepta `coordinator` o `technician`. Comprobar el `sub` de la identidad y los datos de sede autorizados; no inventar organizaciones o asignaciones del comprador.
 
 El smoke y el recorrido manual deben comprobar sedes, alta de equipo, programación, pendientes, cierre e historial. Repetir altas y cierre; probar token inválido, uso incorrecto, rol insuficiente, otra organización y cursores ajenos. La idempotencia de altas/programación se conserva al menos siete días y hasta el borrado eventual de TTL; no garantiza deduplicación indefinida. Confirmar el cierre en el registro primario, porque el índice pendiente es eventual.
+
+Para Pilot, abrir `/app/piloto` como coordinador, guardar y recargar un borrador, indicar un inicio futuro y una semana base local de siete días completos, y confirmar únicamente datos técnicos durante QA. La inscripción es única y queda conservada; repetir la confirmación consulta el original, no renueva el periodo. Verificar también el caso de técnico sin permiso y errores recuperables. El [contrato de onboarding](../contracts/pilot-enrollment.md) distingue borrador, confirmación y procedencia de la línea base.
 
 ## Verificar la web
 
@@ -97,6 +111,8 @@ Un `200` de salud sólo verifica Health. No confirma autorización, tablas o ren
 Las alarmas Lambda detectan fallos de invocación. La alarma `ApiServerErrors` usa `AWS/ApiGateway`, métrica HTTP API `5xx`, dimensión `ApiId`, suma de cinco minutos y umbral de un error. Incluye las respuestas 500 manejadas por Access, Assets e Inspections que no incrementan Lambda Errors. Consultar el estado de alarma y los access logs por requestId/ruta/status; no registrar cuerpos, tokens o datos personales para diagnosticar. Referencia: [métricas oficiales de HTTP API](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-metrics.html). Su configuración no acredita una prueba de fallo real ni entrega de notificaciones; el canal y destinatario siguen pendientes de decisión operativa.
 
 Configurar un rol OIDC de alcance mínimo y `AWS_DEPLOY_ROLE_ARN` para GitHub Actions. Mientras no esté verificado, distinguir CI de pruebas de un pipeline capaz de publicar. Seguir [development → testing → main](../promocion.md): testing usa `sedepulso-testing.lynxpardelle.com`; producción, `sedepulso.lynxpardelle.com`.
+
+La nueva API Pilot también contribuye a la métrica HTTP `5xx` cuando devuelve un error manejado. Sus dos alarmas Lambda adicionales llevan la definición a once alarmas por ambiente. El observador consulta los nombres exactos de los cinco stacks, verifica `billingEnabled=false` y persiste su informe privado con el rol OIDC separado. Comprobar el resultado y lectura posterior; estos detectores no acreditan entrega de avisos. Véase [métricas y seguimiento](piloto-metricas.md).
 
 Los logs tienen retención de 14 días. Las alarmas de errores requieren definir canal y destinatario para entregar avisos. El ejercicio de recuperación de Access en development pasó el 2026-11-19: comparó un marcador restaurado con su valor esperado y comprobó la eliminación de tabla, backup y marcador temporales. El [runbook de recuperación](recuperacion.md) conserva alcance y evidencia. La recuperación coordinada de inventario, inspecciones, identidad y estáticos, así como RTO/RPO comerciales, todavía no está acreditada.
 

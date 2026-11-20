@@ -1,6 +1,6 @@
 # Inscripción y línea base del piloto de SedePulso
 
-La ampliación está implementada; su publicación en development, testing y producción está en verificación. La entrega anterior del observador se conserva en su [cierre técnico](../releases/2026-11-19-piloto.md). Este contrato habilita la inscripción explícita desde la app y mantiene Stripe deshabilitado. Guardar un borrador o crear una cuenta no inicia un piloto.
+La ampliación está publicada y verificada en development, testing y producción: [cierre de onboarding](../releases/2026-11-19-onboarding-piloto.md). La entrega anterior del observador se conserva en su [cierre técnico](../releases/2026-11-19-piloto.md). Este contrato habilita la inscripción explícita desde la app y mantiene Stripe deshabilitado. Guardar un borrador o crear una cuenta no inicia un piloto.
 
 El exportador aplica `LeadingKeys` con `ForAllValues:StringEquals` y exige que la clave esté presente mediante `Null=false`, conforme al [control fino de DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/specifying-conditions.html). Su respuesta se limita a 4 MiB de datos antes del sobre de respuesta, por debajo del [límite síncrono de Lambda](https://docs.aws.amazon.com/lambda/latest/api/API_Invoke.html).
 
