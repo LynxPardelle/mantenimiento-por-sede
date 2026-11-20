@@ -67,6 +67,7 @@ jobs:
       - run: npm --prefix infra ci
       - run: npm --prefix infra test
       - run: node --test infra/ci/*.test.mjs
+      - run: node --test infra/pilot/*.test.mjs
       - run: npm --prefix frontend test -- --watch=false
       - run: npm --prefix frontend run build
       - run: python -m pip install cfn-lint==1.60.1
@@ -116,6 +117,17 @@ jobs:
         run: node infra/tools/verify-web.mjs --environment "$DEPLOY_ENV"
         env:
           DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+      - name: Asumir rol separado de observación
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.PILOT_OBSERVER_ROLE_ARN }}
+          aws-region: us-east-1
+          unset-current-credentials: true
+      - name: Verificar observador e informe privado
+        run: node infra/tools/observe-pilot.mjs --environment "$DEPLOY_ENV"
+        env:
+          DEPLOY_ENV: ${{ github.ref_name == 'main' && 'production' || github.ref_name }}
+          PILOT_REPORT_BUCKET: ${{ vars.PILOT_REPORT_BUCKET }}
       - name: Conservar evidencia sin credenciales
         if: always()
         uses: actions/upload-artifact@v4

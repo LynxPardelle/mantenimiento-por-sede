@@ -49,6 +49,7 @@ npm --prefix frontend test -- --watch=false
 npm --prefix frontend run build
 node --test infra/test/*.test.mjs
 node --test infra/ci/*.test.mjs
+node --test infra/pilot/*.test.mjs
 cfn-lint --template infra/template.yaml infra/services/assets.yaml infra/services/inspections.yaml infra/frontend.yaml
 ```
 
@@ -75,5 +76,6 @@ El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) e
 - [Operación y despliegue](docs/runbooks/despliegue.md).
 - [OIDC de GitHub Actions](docs/runbooks/ci-oidc.md).
 - [Recuperación de datos](docs/runbooks/recuperacion.md).
+- [Métricas privadas y seguimiento del piloto](docs/runbooks/piloto-metricas.md).
 
 La carpeta `mantenimiento-por-sede`, el origin `LynxPardelle/mantenimiento-por-sede` y el archivo del plan conservan sus identificadores históricos para mantener los enlaces y el proyecto remoto. La identidad visible y la infraestructura nueva usan **SedePulso** y `sedepulso`.

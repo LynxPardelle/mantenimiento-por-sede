@@ -4,6 +4,8 @@ import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { aws, stackOutputs } from './aws.mjs';
+import { collectCohort } from '../pilot/collect.mjs';
+import { summarizePilot } from '../pilot/metrics.mjs';
 
 // Only disposable identities/data in a fresh smoke namespace; never tenant data.
 const args = process.argv.slice(2);
@@ -82,7 +84,8 @@ try {
   const created = await Promise.all(Array.from({ length: 3 }, () => api(path, { token: coordinator.token, method: 'POST', body, key: 'same' })));
   const asset = expect(created[0], 201, 'alta transaccional');
   assetIds.push(asset.id);
-  for (const response of created) { assert.equal(response.status, 201); assert.equal(response.value.id, asset.id); }
+  assert.match(asset.createdAt, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+  for (const response of created) { assert.equal(response.status, 201); assert.deepEqual(response.value, asset); }
   checks.push('alta concurrente idempotente');
   expect(await api(path, { token: coordinator.token, method: 'POST', body: { ...body, name: 'Otro contenido' }, key: 'same' }), 409, 'conflicto de idempotencia');
   const second = expect(await api(path, { token: coordinator.token, method: 'POST', body, key: 'second' }), 201, 'segundo equipo');
@@ -97,6 +100,8 @@ try {
   const historyPath = `${path}/${asset.id}/inspections`;
   expect(await api(historyPath, { token: other.token }), 404, 'equipo de otra organización oculto');
   const inspection = expect(await api(historyPath, { token: coordinator.token, method: 'POST', body: { dueDate: today }, key: 'inspection' }), 201, 'programación persistida');
+  assert.match(inspection.createdAt, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+  assert.deepEqual(expect(await api(historyPath, { token: coordinator.token, method: 'POST', body: { dueDate: today }, key: 'inspection' }), 201, 'fecha de programación estable al reintentar'), inspection);
   const completionPath = `${historyPath}/${inspection.id}/completion`;
   const pendingPath = `/api/v1/sites/north/inspections?status=pending&dueThrough=${today}`;
   let pending;
@@ -115,6 +120,17 @@ try {
   const repeated = expect(await api(completionPath, { token: technician.token, method: 'PUT', body: { result: completed.result, note: completed.note } }), 200, 'reintento de cierre estable');
   assert.deepEqual(repeated, completed);
   assert.deepEqual(expect(await api(historyPath, { token: coordinator.token }), 200, 'historial persistido').items, [completed]);
+  const cohort = { code: 'smoke-technical', orgId: orgA, siteId: 'north', timeZone: 'America/Mexico_City', startDate: today, classification: 'technical', agreedAt: `${today}T00:00:00.000Z`, goals: { onTimeRateTarget: 0.8, minimumDueInspections: 5 } };
+  const { readCapacityUnits, ...observation } = await collectCohort({ aws, assetsTable: inventory.AssetsTableName, inspectionsTable: maintenance.InspectionsTableName, cohort });
+  assert.ok(readCapacityUnits > 0);
+  const metrics = summarizePilot({ cohorts: [cohort], observations: [observation], checkedAt: new Date().toISOString() });
+  assert.equal(metrics.status, 'awaiting-participant');
+  assert.equal(metrics.totals.technical.closedInPeriod, 1);
+  assert.equal(metrics.totals.technical.structuralEvidence.numerator, 1);
+  assert.equal(metrics.totals['enrolled-real'].cohorts, 0);
+  assert.ok(!JSON.stringify(metrics).includes(technician.sub));
+  assert.ok(!JSON.stringify(metrics).includes(completed.note));
+  checks.push('métricas técnicas saneadas sin inscribir piloto real');
   const html = await fetch(base, { signal: AbortSignal.timeout(30000) });
   assert.equal(html.status, 200);
   assert.match(await html.text(), /SedePulso/);
