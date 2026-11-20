@@ -76,7 +76,7 @@ El cierre usa condición de estado pendiente. Un reintento idéntico devuelve el
 
 La pertenencia contiene `orgId` y las sedes asignadas con rol y zona horaria. Los usuarios ya existentes en Cognito se asocian mediante el aprovisionamiento administrativo. Las escrituras sólo usan el contexto resuelto por Access.
 
-Los identificadores de dominio son ULID. Un equipo guarda nombre, tipo y estado operativo. Una inspección conserva vencimiento local, estado, resultado, nota, autor y fecha UTC de finalización. La zona IANA de la sede permite separar fecha local e instante de cierre.
+Los identificadores de dominio son ULID. Un equipo guarda nombre, tipo y estado operativo. Una inspección conserva vencimiento local, estado, resultado, nota, autor y fecha UTC de finalización. Las nuevas altas y programaciones guardan además `createdAt` UTC del servidor, conservado al reintentar; los registros anteriores pueden carecer de él y no se reconstruye desde el ULID. La zona IANA de la sede permite separar fecha local e instante de cierre.
 
 El índice disperso `PendingBySite` usa `pendingSiteKey=ORG#<orgId>#SITE#<siteId>` y `pendingDueKey=<YYYY-MM-DD>#<assetId>#<inspectionId>`, con proyección `ALL`. El cierre elimina ambas claves en la misma actualización. La lista es eventualmente consistente: se confirma el cierre leyendo el registro primario. Las consultas de dominio son por clave y paginadas, sin scans de tablas.
 
@@ -86,7 +86,7 @@ Development usa `sedepulso-development.lynxpardelle.com`, testing `sedepulso-tes
 
 S3 bloquea acceso público. La Function URL de SSR usa `AWS_IAM`; la política permite CloudFront con `SourceArn` de la distribución y los permisos `lambda:InvokeFunctionUrl` y `lambda:InvokeFunction`. Los servicios de negocio pasan por el autorizador HTTP API.
 
-Los logs tienen retención de 14 días y no deben incluir JWT, notas, contraseñas ni cuerpos personales. Las alarmas Lambda detectan fallos de invocación; `ApiServerErrors` monitoriza HTTP API `5xx` por `ApiId`, incluyendo respuestas de error manejadas. Las tres alarmas y la recepción real de access logs de salud se comprobaron; un canal y destinatario de notificación requieren configuración. Las tablas usan capacidad bajo demanda y conservación de datos. El ejercicio de Access pasó con un marcador restaurado y limpieza verificada; la recuperación coordinada de todos los dominios y RTO/RPO comerciales requieren un ensayo adicional antes del piloto con datos reales.
+Los logs tienen retención de 14 días y no deben incluir JWT, notas, contraseñas ni cuerpos personales. Las alarmas Lambda detectan fallos de invocación; `ApiServerErrors` monitoriza HTTP API `5xx` por `ApiId`, incluyendo respuestas de error manejadas. El conjunto actual tiene nueve alarmas propias por ambiente; su estado y la recepción real de access logs de salud se comprobaron. Un canal y destinatario de notificación requieren configuración. Las tablas usan capacidad bajo demanda y conservación de datos. El ejercicio de Access pasó con un marcador restaurado y limpieza verificada; la recuperación coordinada de todos los dominios y RTO/RPO comerciales requieren un ensayo adicional antes del piloto con datos reales.
 
 La demostración local se limita a localhost y datos aislados. La validación real incluye Cognito, IAM, DynamoDB, dos organizaciones, dos sedes, reintentos, cierre concurrente y rechazo de acceso directo a orígenes privados. Salud por sí sola no prueba este recorrido.
 
@@ -107,3 +107,11 @@ Cognito ejecuta validación previa y activación posterior a la confirmación. L
 Un WAF regional compartido sólo redirige `GET /signup` del dominio Cognito de cada ambiente hacia su `/registro`; login, recuperación y las API JSON mantienen su funcionamiento. Esto evita presentar un formulario del proveedor que no recoge los datos de la sede.
 
 GitHub usa OIDC con subject inmutable y roles por environment; el rol de servicio CloudFormation exige una boundary de ejecución por ambiente. Las promociones conservan las protecciones existentes. Cada deploy ejecuta comprobaciones de dominio, aprovisionamiento y orígenes privados. El [runbook OIDC](../runbooks/ci-oidc.md) detalla alcances y límites IAM.
+
+## Observación operacional del piloto
+
+TASK-006 añade un trabajo administrativo de GitHub Actions con rol OIDC separado por ambiente. Lee un registro privado de cohortes explícitas, consulta por clave y con proyecciones saneadas las tablas Assets e Inspections y persiste agregados en un bucket privado cifrado/versionado. No incorpora una ruta HTTP de analítica ni modifica los límites de acceso de las Lambdas del producto. La autorización IAM del observador abarca ambas tablas propias; el alcance por cohorte lo aplica el recolector administrativo, sin presentarlo como aislamiento IAM por participante.
+
+El observador no recibe consultas de registros Access, scans ni escrituras de negocio. Sólo obtiene metadatos de tablas/stacks y las alarmas métricas exactas descubiertas en los cuatro stacks propios. No devuelve notas, valores de autor o nombres. Los cortes semanales usan la zona local de la sede y se conservan mediante creación condicional; el informe posterior reutiliza el corte ya guardado. La [guía del observador](../runbooks/piloto-metricas.md) describe privacidad, cobertura, retención y recuperación del seguimiento.
+
+El calendario diario en la nube y la revisión local de Codex no inscriben una operación real ni activan cobros. El inicio, objetivos y línea base del piloto requieren evidencia explícita; Stripe permanece deshabilitado.
