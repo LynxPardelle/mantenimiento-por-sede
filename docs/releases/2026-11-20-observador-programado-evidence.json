@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "product": "SedePulso",
+  "task": "TASK-022",
+  "enables": "TASK-006",
+  "verifiedAt": "2026-11-20T22:14:41.229Z",
+  "publicationDateLocal": "2026-11-20",
+  "timeZone": "Etc/GMT+6",
+  "tests": {
+    "backend": 84,
+    "ciIam": 21,
+    "pilot": 41,
+    "angular": 70,
+    "total": 216,
+    "ssrBuild": "passed",
+    "templateLint": "passed"
+  },
+  "billingEnabled": false,
+  "diagnosisBefore": {
+    "source": "Point-in-time GitHub Actions API inspection on 2026-11-20 around 21:08 UTC",
+    "observedManualRuns": 3,
+    "observedScheduleRuns": 0,
+    "workflowState": "active",
+    "defaultBranch": "main",
+    "dailyCron": "17 13 * * *",
+    "pointInTimeOnly": true,
+    "observation": "No scheduled run was present at the initial inspection. A successful schedule run from the previous source commit appeared at 21:12 UTC before the change was published.",
+    "awsOrOidcFailureEstablished": false,
+    "internalSchedulerCause": "not-exposed-by-the-API"
+  },
+  "firstScheduledBeforeChange": {
+    "ciRun": 44818232242,
+    "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44818232242",
+    "event": "schedule",
+    "branch": "main",
+    "sourceCommit": "e1694db73850de6209241b52a309368000f6d806",
+    "attempt": 1,
+    "workflowId": 424456514,
+    "conclusion": "success",
+    "createdAt": "2026-11-20T21:12:23Z",
+    "updatedAt": "2026-11-20T21:12:52Z",
+    "occurredBeforeChangePublished": true,
+    "recoveryAttributedToNewCron": false,
+    "scheduleExpression": null,
+    "scheduleExpressionSource": "unavailable",
+    "timingInference": {
+      "soleConfiguredCronAtSourceCommit": "17 13 * * *",
+      "assumedSameDayCutUtc": "2026-11-20T13:17:00Z",
+      "inferredDelaySeconds": 28523,
+      "interpretation": "Nearly eight hours after the sole configured daily cut, assuming this was the same-day tick; the exact trigger expression and internal dispatch cause are not exposed by this receipt."
+    },
+    "receipt": {
+      "environment": "production",
+      "sourceCommit": "e1694db73850de6209241b52a309368000f6d806",
+      "runId": "44818232242-1",
+      "checkedAt": "2026-11-20T21:12:32.373Z",
+      "reportSha256": "5e5c41298b44eb7372d05149f2806c48f491c662be69b8f73ae2b0836ac58cb8",
+      "privateReadBack": true,
+      "encrypted": true,
+      "versioned": true,
+      "billingEnabled": false,
+      "stackCount": 5,
+      "alarmCount": 11,
+      "alarmNotificationsConfigured": false
+    }
+  },
+  "mitigation": {
+    "type": "daily-redundancy-and-trigger-provenance",
+    "workflow": ".github/workflows/piloto.yml",
+    "additionalCutPurpose": "Additional observation opportunity and explicit event/cron logging; not a claim to cure an unknown scheduler internal cause.",
+    "firstRecoveryAttributedToMitigation": false,
+    "preservesMorningCron": true,
+    "secondCutIsConditionalRetry": false,
+    "schedules": [
+      {
+        "cron": "17 13 * * *",
+        "utcTime": "13:17",
+        "localTime": "07:17"
+      },
+      {
+        "cron": "57 21 * * *",
+        "utcTime": "21:57",
+        "localTime": "15:57"
+      }
+    ],
+    "executionsPerDay": 2,
+    "productionBranch": "main",
+    "role": "separate-oidc-observer",
+    "cancelInProgress": false,
+    "businessWrites": false,
+    "billingEnabled": false,
+    "freshnessThresholdHours": 26,
+    "maximumNominalGap": {
+      "hours": 15,
+      "minutes": 20
+    }
+  },
+  "environments": [
+    {
+      "environment": "development",
+      "sourceCommit": "cf61cb7bf0116554c65235c968fc9efa13a6b0d3",
+      "sourceBranch": "development",
+      "dirty": false,
+      "release": "8fff2b65cb7a9d5e",
+      "ciRun": 44818569583,
+      "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44818569583",
+      "conclusion": "success",
+      "artifactId": 14670253974,
+      "artifactDigest": "sha256:ecc7683dc3aac48d074cecdc15b24c4ab7cd710429d9bebdc7f55d615b5ac63c",
+      "reportHashes": {
+        "manifest.json": "34089a24f11b40e6504e2fc897d5f99781d5255d0311935a96a350003e7f3d58",
+        "smoke-development.json": "43909a4f35ca5d89d0f2d07ef3cbe5529fb83ea780ce22604594606729818b3e",
+        "signup-development.json": "7aa6bc80dd6e000db31842bff0f4937a0a04f03e4f86aeeed3442d47fc084b50",
+        "web-development.json": "a88f03efd158733052b51f94ecbfdee0c5bfe7cb0b9c0ce444ac9868431893e3"
+      },
+      "domainChecks": 60,
+      "signupChecks": 5,
+      "disposableIdentitiesDeleted": 3,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "directLambda": 403,
+        "directS3": 403,
+        "signupEnabled": true,
+        "billingEnabled": false
+      },
+      "observer": {
+        "environment": "development",
+        "sourceCommit": "cf61cb7bf0116554c65235c968fc9efa13a6b0d3",
+        "runId": "44818569583-1",
+        "checkedAt": "2026-11-20T21:21:16.748Z",
+        "reportSha256": "1039e4de9e4a649e3cddb9c8bc90fce86a8653a7e8044ed18dd6942d70594e9b",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "stackCount": 5,
+        "alarmCount": 11,
+        "alarmNotificationsConfigured": false,
+        "ownerExportReadSucceeded": true,
+        "weeklyReviewIntegrationVerified": true
+      }
+    },
+    {
+      "environment": "testing",
+      "sourceCommit": "7e8a74c03abdf10da024e909f83f38d232b832c1",
+      "sourceBranch": "testing",
+      "dirty": false,
+      "release": "8fff2b65cb7a9d5e",
+      "ciRun": 44819681853,
+      "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44819681853",
+      "conclusion": "success",
+      "artifactId": 14671493192,
+      "artifactDigest": "sha256:791f63336bf405a548d5156f5202116d6f3a2976dc3331d6e83c60a779bdc215",
+      "reportHashes": {
+        "manifest.json": "b37baaff910c9507f2ef07c46fdb6d2b18965bb3d2e0ddb89cd4a3511e3ac025",
+        "smoke-testing.json": "ed7149846ad23412ed8076d70958e4975a2b404ab93b9236d51406f0a10194f9",
+        "signup-testing.json": "2d6d6edcb69489a43402a3b092029002058e4d07dce2b8569fe6d9981b0ce3c8",
+        "web-testing.json": "23fd75953f02170430504674ecdca422ab1ae10947b8cf0d4ef82ef48e660d0d"
+      },
+      "domainChecks": 60,
+      "signupChecks": 5,
+      "disposableIdentitiesDeleted": 3,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "directLambda": 403,
+        "directS3": 403,
+        "signupEnabled": true,
+        "billingEnabled": false
+      },
+      "observer": {
+        "environment": "testing",
+        "sourceCommit": "7e8a74c03abdf10da024e909f83f38d232b832c1",
+        "runId": "44819681853-1",
+        "checkedAt": "2026-11-20T21:29:34.152Z",
+        "reportSha256": "306743d68c468d553ecab290fb8d3a04e19618ab2b496d8e0d8f24babe5ffc19",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "stackCount": 5,
+        "alarmCount": 11,
+        "alarmNotificationsConfigured": false,
+        "ownerExportReadSucceeded": true,
+        "weeklyReviewIntegrationVerified": true
+      }
+    },
+    {
+      "environment": "production",
+      "sourceCommit": "1c977584fc55b2b41aa492644162cfed57d04e9c",
+      "sourceBranch": "main",
+      "dirty": false,
+      "release": "8fff2b65cb7a9d5e",
+      "ciRun": 44820926265,
+      "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44820926265",
+      "conclusion": "success",
+      "artifactId": 14672521504,
+      "artifactDigest": "sha256:2605d7925affabfff2021b2c1a876245698ab3c5a774ea0eaa531dc2ac186c20",
+      "reportHashes": {
+        "manifest.json": "52ebb63ac2081221e86200556cbc510434d5a74479a8ce07a1df1621e3a0456c",
+        "smoke-production.json": "d86fc4593f47d1b8d54e79d2aaf574ce4e8cf8acb3a6c6a07ac0a86d7f0a0419",
+        "signup-production.json": "9e7ce460a24ff6888ad596df5607a241de92a3584463ea7c57750ede3d5395a3",
+        "web-production.json": "ed7505a4f6c57a520a19c13625f2cb6ae525d7f010e5391292939174ba1cd6af"
+      },
+      "domainChecks": 60,
+      "signupChecks": 5,
+      "disposableIdentitiesDeleted": 3,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "directLambda": 403,
+        "directS3": 403,
+        "signupEnabled": true,
+        "billingEnabled": false
+      },
+      "observer": {
+        "environment": "production",
+        "sourceCommit": "1c977584fc55b2b41aa492644162cfed57d04e9c",
+        "runId": "44820926265-1",
+        "checkedAt": "2026-11-20T21:37:53.135Z",
+        "reportSha256": "6657520619d882027fb314c4443d57b914ee09b51e6c680d78d7fdcc55c8f845",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "stackCount": 5,
+        "alarmCount": 11,
+        "alarmNotificationsConfigured": false,
+        "ownerExportReadSucceeded": true,
+        "weeklyReviewIntegrationVerified": true
+      }
+    }
+  ],
+  "scheduledObserver": {
+    "ciRun": 44818232242,
+    "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44818232242",
+    "event": "schedule",
+    "branch": "main",
+    "sourceCommit": "e1694db73850de6209241b52a309368000f6d806",
+    "attempt": 1,
+    "workflowId": 424456514,
+    "conclusion": "success",
+    "createdAt": "2026-11-20T21:12:23Z",
+    "updatedAt": "2026-11-20T21:12:52Z",
+    "occurredBeforeChangePublished": true,
+    "recoveryAttributedToNewCron": false,
+    "scheduleExpression": null,
+    "scheduleExpressionSource": "unavailable",
+    "timingInference": {
+      "soleConfiguredCronAtSourceCommit": "17 13 * * *",
+      "assumedSameDayCutUtc": "2026-11-20T13:17:00Z",
+      "inferredDelaySeconds": 28523,
+      "interpretation": "Nearly eight hours after the sole configured daily cut, assuming this was the same-day tick; the exact trigger expression and internal dispatch cause are not exposed by this receipt."
+    },
+    "receipt": {
+      "environment": "production",
+      "sourceCommit": "e1694db73850de6209241b52a309368000f6d806",
+      "runId": "44818232242-1",
+      "checkedAt": "2026-11-20T21:12:32.373Z",
+      "reportSha256": "5e5c41298b44eb7372d05149f2806c48f491c662be69b8f73ae2b0836ac58cb8",
+      "privateReadBack": true,
+      "encrypted": true,
+      "versioned": true,
+      "billingEnabled": false,
+      "stackCount": 5,
+      "alarmCount": 11,
+      "alarmNotificationsConfigured": false
+    }
+  },
+  "newBackupScheduleVerification": {
+    "status": "not-yet-observed",
+    "checkedAt": "2026-11-20T22:13:34Z",
+    "expectedCron": "57 21 * * *",
+    "expectedSourceCommit": "1c977584fc55b2b41aa492644162cfed57d04e9c",
+    "observedScheduleRuns": 1
+  },
+  "privacy": {
+    "receipts": "technical-metadata-only",
+    "cohortDataPublished": false,
+    "businessMetricsPublished": false,
+    "privateReportsPublished": false,
+    "noteTextExported": false,
+    "actorValuesExported": false
+  },
+  "verificationLimits": [
+    "The initial API inventory was a point-in-time snapshot with three manual runs and zero scheduled runs. A successful schedule run from the old source commit appeared before the mitigation was published.",
+    "The first successful schedule run must not be attributed to the new cron. Its near-eight-hour delay from the sole configured daily cut is an inference assuming the same-day tick; the exact internal cause is unknown.",
+    "The added permanent daily cut provides redundancy and explicit trigger provenance; it is neither a conditional retry nor proof of repairing an internal GitHub scheduler cause.",
+    "The successful schedule event and its matching private read-back prove that execution from the previous source commit, not punctuality or successful delivery of future cron events.",
+    "At the 2026-11-20T22:13:34Z inspection only one schedule run had been observed; delivery of the newly configured 57 21 * * * backup cut had not yet been observed.",
+    "A workflow_dispatch execution is manual verification and is not relabelled as schedule evidence.",
+    "Alarm state and notification configuration do not establish notification delivery; no notification delivery test was performed.",
+    "Technical smoke fixtures and cleanups are not participants, elapsed commercial pilot weeks or evidence of price acceptance."
+  ]
+}

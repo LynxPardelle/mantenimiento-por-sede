@@ -78,6 +78,7 @@ El despliegue modifica recursos AWS. El [runbook](docs/runbooks/despliegue.md) e
 - [TASK-006: métricas y seguimiento publicados](docs/releases/2026-11-19-piloto.md).
 - [TASK-020: onboarding y línea base publicados](docs/releases/2026-11-19-onboarding-piloto.md).
 - [TASK-021: revisiones semanales y comparación publicadas](docs/releases/2026-11-19-revisiones-piloto.md).
+- [TASK-022: programación real del observador y recibos](docs/releases/2026-11-20-observador-programado.md).
 - [Marca y dominios](docs/branding.md).
 - [Promoción entre ambientes](docs/promocion.md).
 - [Operación y despliegue](docs/runbooks/despliegue.md).
