@@ -6,9 +6,10 @@ El bootstrap `node infra/tools/configure-ci.mjs` configura la federación del re
 
 El stack `sedepulso-ci-oidc` en `us-east-1` crea, para cada ambiente `development`, `testing` y `production`:
 
-- `sedepulso-ci-<ambiente>-github`: lo asume GitHub mediante OIDC; gestiona cambios de los cuatro stacks del ambiente, publica artefactos y ejecuta verificaciones con datos temporales.
+- `sedepulso-ci-<ambiente>-github`: lo asume GitHub mediante OIDC; gestiona cambios de los cinco stacks del ambiente —platform, Pilot, Assets, Inspections y frontend—, publica artefactos y ejecuta verificaciones con datos temporales.
 - `sedepulso-ci-<ambiente>-cloudformation`: lo asume únicamente CloudFormation para crear o actualizar recursos. El rol GitHub sólo puede pasar ese rol específico a CloudFormation.
 - `sedepulso-<ambiente>-runtime-boundary`: límite de los roles Lambda. Permite como máximo logs, operaciones de dominio sobre tablas del ambiente e invocaciones entre sus funciones. Cada función sigue necesitando sus permisos propios, que se intersectan con el límite.
+- `sedepulso-pilot-<ambiente>-github`: rol OIDC separado para observación privada, sin despliegues ni escrituras de negocio. Puede descubrir los cinco stacks, consultar Assets/Inspections e invocar únicamente el exportador de Pilot; no puede invocar la API que escribe el onboarding.
 
 CloudFormation sólo puede crear roles Lambda con esa permissions boundary y con el prefijo del ambiente. No puede editar sus roles CI ni modificar la boundary, ni adjuntar políticas administradas diferentes de `AWSLambdaBasicExecutionRole`. No se utiliza `AdministratorAccess`.
 
@@ -30,18 +31,24 @@ El bootstrap conserva las protecciones existentes. Se detiene si un ambiente exi
 
 ## Variables de GitHub
 
-Cada environment contiene cuatro variables públicas de configuración, no secretos:
+Cada environment contiene seis variables públicas de configuración, no secretos:
 
 - `AWS_DEPLOY_ROLE_ARN`: rol OIDC del ambiente.
 - `CLOUDFORMATION_ROLE_ARN`: rol de servicio que recibe `cloudformation deploy --role-arn`.
 - `SIGNUP_WEB_ACL_ARN`: ACL regional compartido para dirigir el signup de Cognito al registro completo.
 - `COGNITO_WAF_POOL_READY`: `true` sólo cuando el bootstrap comprobó el pool y autorizó su ARN exacto. `false` crea únicamente la plataforma inicial, sin asociar ACL ni publicar servicios/frontend; después requiere repetir el bootstrap y el workflow.
+- `PILOT_OBSERVER_ROLE_ARN`: rol OIDC separado de observación privada del ambiente.
+- `PILOT_REPORT_BUCKET`: bucket privado de registros administrativos e informes; no es un origen web ni un artefacto público de GitHub.
 
 El job no usa una variable de environment en su `if` previo al arranque. GitHub sólo ofrece esas variables después de declarar/cargar el environment; las entradas del paso de credenciales y del paso de deploy las consumen allí.
 
 ## Alcance de permisos
 
-Los stacks permitidos son exactamente platform, assets, inspections y frontend del ambiente. Los objetos del bucket privado de releases se restringen a su prefijo de ambiente. Los recursos con nombres propios usan el prefijo `sedepulso-<ambiente>-`. Route 53 sólo permite A/AAAA del host del ambiente y CNAME de validación ACM bajo ese host, dentro de la zona de `lynxpardelle.com`.
+Los stacks permitidos por la configuración actual son exactamente platform, pilot, assets, inspections y frontend del ambiente. Los objetos del bucket privado de releases se restringen a su prefijo de ambiente. Los recursos con nombres propios usan el prefijo `sedepulso-<ambiente>-`. Route 53 sólo permite A/AAAA del host del ambiente y CNAME de validación ACM bajo ese host, dentro de la zona de `lynxpardelle.com`.
+
+Pilot conserva dos funciones con roles separados: la API sólo lee/escribe su tabla e invoca Access para autorizar; el exportador sólo consulta `PILOT#REGISTRY` con `LeadingKeys` y presencia de la clave exigida. El rol de despliegue puede invocar ese exportador exacto para comprobar el fixture técnico. El observador también puede invocarlo, pero no recibe `Query` directo sobre Pilot ni permiso para invocar su función de escritura. Los detalles del contrato y la línea base están en [inscripción del piloto](../contracts/pilot-enrollment.md).
+
+El rol observador sólo obtiene metadata de Access, Assets e Inspections; no lee membresías ni usuarios Cognito. Conserva lectura del registro S3 administrativo y escritura de informes cifrados en el prefijo del ambiente, sin modificar el registro ni borrar objetos. Descubre las alarmas métricas de los cinco stacks y consulta sus nombres exactos bajo el ARN del ambiente. La nueva definición contiene once alarmas, incluidas las dos de Pilot; el [runbook de métricas](piloto-metricas.md) explica el seguimiento y la distinción entre resultados publicados e históricos.
 
 Algunos servicios asignan identificadores aleatorios o exigen `Resource: *` para crear o listar. El rol de servicio enumera las operaciones necesarias, restringe región y cuenta cuando el servicio lo admite y limita la solicitud del certificado al hostname correspondiente. Las escrituras de distribuciones CloudFront y certificados ACM exigen tags Product/Environment del ambiente. El tagging inicial exige los tags solicitados y no puede sobrescribir los de otro producto o ambiente. Las lecturas se separan de las escrituras. OAC y cache/response policies no soportan esos tags y mantienen un alcance de ARN de cuenta con operaciones enumeradas, sujeto al control de stacks y rol de servicio. Las políticas del rol de CloudFormation se dividen en managed policies del bootstrap para respetar cuotas de IAM. No se da un wildcard de acciones. Las rutas HTTP de API Gateway y las políticas CDN se gestionan desde los stacks autorizados.
 
@@ -90,7 +97,9 @@ node infra/tools/configure-ci.mjs
 
 Antes de subir el template CI, que supera el límite inline de CloudFormation, el bootstrap comprueba el bucket dedicado `sedepulso-artifacts-<cuenta>-us-east-1`. Sólo un 404/NoSuchBucket permite crearlo, bloquear sus cuatro opciones de acceso público y habilitar versionado. Si ya existe, verifica propietario, región, privacidad y versionado sin cambiar su configuración; un 403 u otro fallo se propaga y no intenta crear otro bucket. `--template-only` sale antes de esta preparación y no crea recursos AWS.
 
-En un push a una rama de entrega, el workflow verifica pruebas/build/lint, asume OIDC, empaqueta y despliega. Después ejecuta smoke de dominio, alta/organización aislada y comprobación web/orígenes privados; conserva sólo los reportes JSON seleccionados como artefactos GitHub.
+En un push a una rama de entrega, el workflow verifica pruebas backend, CI/IAM, observador y Angular, build SSR y lint de los cinco templates, asume OIDC, empaqueta y despliega. Después ejecuta smoke de dominio —ahora con inscripción y línea base—, alta/organización aislada y comprobación web/orígenes privados. A continuación asume el rol separado de observación y guarda el informe privado. Conserva únicamente los reportes técnicos JSON seleccionados como artefactos GitHub; no sube el registro de cohortes, los agregados operativos privados ni los textos de onboarding.
+
+La [ampliación de inscripción desde la app](../releases/2026-11-19-onboarding-piloto.md) registra sus commits y runs propios. La validación histórica siguiente corresponde a la entrega anterior de cuatro stacks y conserva sus resultados originales; no acredita por sí sola el despliegue del quinto stack.
 
 Crear los roles no prueba la federación completa. La evidencia de asunción OIDC y de publicación se obtiene del run real de GitHub para cada rama. Revisar fallos de permisos concretos antes de ampliar una política; conservar los límites de ambiente y runtime.
 

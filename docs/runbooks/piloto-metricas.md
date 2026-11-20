@@ -1,6 +1,6 @@
 # Observación privada del piloto de SedePulso
 
-Esta guía permite retomar TASK-006 desde remoto. La entrega anterior del observador fue verificada en los tres ambientes: [cierre técnico](../releases/2026-11-19-piloto.md). La ampliación a inscripción desde la app, quinto stack Pilot y exportación de línea base está implementada; su publicación en los tres ambientes está en verificación. Stripe permanece deshabilitado. El observador conserva sólo lectura de negocio: la inscripción es una acción explícita del coordinador en la API de Pilot.
+Esta guía permite retomar TASK-006 desde remoto. La entrega anterior del observador se conserva en su [cierre técnico](../releases/2026-11-19-piloto.md). La inscripción desde la app, quinto stack Pilot y exportación de línea base están publicados y verificados en los tres ambientes: [cierre de onboarding](../releases/2026-11-19-onboarding-piloto.md). Stripe permanece deshabilitado. El observador conserva sólo lectura de negocio: la inscripción es una acción explícita del coordinador en la API de Pilot.
 
 ## Punto de partida y estado comercial
 
@@ -90,7 +90,7 @@ En cada seguimiento comprobar:
 
 La lectura del 19 de noviembre a las 23:23:51 UTC encontró nueve alarmas propias de producción en `OK`, todas sin acciones de notificación. **Estado OK no equivale a avisos entregados.** El observador comunica el fallo mediante la conclusión de GitHub Actions; no envía correos ni incorpora destinatarios. Las notificaciones de GitHub dependen de la configuración de la cuenta y su entrega no está comprobada por este código.
 
-El nuevo stack define dos alarmas adicionales, para la API y el exportador de Pilot: el conjunto esperado pasa a once. Su publicación está en verificación; la observación debe descubrir los nombres de las cinco pilas y confirmar que todas las alarmas solicitadas aparecen, sin asumir que el antiguo recuento de nueve sigue describiendo la nueva entrega.
+El stack Pilot añade dos alarmas, para la API y su exportador: el conjunto publicado y verificado es de once por ambiente. La observación descubre los nombres de las cinco pilas y confirma que todas las alarmas solicitadas aparecen; el antiguo recuento de nueve sólo describe la entrega histórica.
 
 ## Fuentes privadas y contrato de cohortes
 
