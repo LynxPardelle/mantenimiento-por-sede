@@ -47,3 +47,7 @@ La restauración aislada de Access en development comparó un marcador y complet
 ## Continuidad comercial
 
 El [piloto operativo](../producto/piloto-operativo.md) prepara cuatro semanas de métricas y decisión de continuidad. Siguen pendientes participante y alcance reales, canal de avisos, ensayo de recuperación coordinada y validación de precio/prestaciones antes de ofrecer planes de pago. Preparar la guía y publicar el producto no acreditan demanda ni aceptación comercial.
+
+## Continuación de TASK-006
+
+La ampliación posterior de métricas privadas, seguimiento y promociones verificadas se registra en [el cierre del piloto técnico](2026-11-19-piloto.md). Este documento conserva la evidencia de la entrega anterior.

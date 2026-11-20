@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "product": "SedePulso",
+  "task": "TASK-006",
+  "verifiedAt": "2026-11-20T00:08:45.364Z",
+  "publicationDateLocal": "2026-11-19",
+  "timeZone": "Etc/GMT+6",
+  "tests": {
+    "backend": 43,
+    "ciIam": 19,
+    "pilot": 27,
+    "angular": 31,
+    "ssrBuild": "passed",
+    "templateLint": "passed"
+  },
+  "billingEnabled": false,
+  "commercialPilot": {
+    "status": "awaiting-participant",
+    "pilotWeek": null,
+    "commercialAcceptance": null,
+    "unmeasured": [
+      "historyLookupBaseline",
+      "historyLookupTimeChange",
+      "operationalEffort",
+      "noteUsefulness",
+      "attributedAwsCost",
+      "priceAcceptance"
+    ]
+  },
+  "schedules": {
+    "cloud": {
+      "workflow": ".github/workflows/piloto.yml",
+      "localTime": "07:17",
+      "utcTime": "13:17",
+      "cadence": "daily",
+      "freshnessThresholdHours": 26
+    },
+    "codex": {
+      "id": "sedepulso-seguimiento-del-piloto",
+      "kind": "heartbeat",
+      "status": "ACTIVE",
+      "localTime": "08:00",
+      "cadence": "daily",
+      "execution": "local-app-dependent"
+    }
+  },
+  "environments": [
+    {
+      "environment": "development",
+      "sourceCommit": "00ce03aaa261e01df337932cfd0cb23ed8df7b7d",
+      "sourceBranch": "development",
+      "dirty": false,
+      "release": "5c9a47ea84932b17",
+      "ciRun": 44640475740,
+      "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44640475740",
+      "conclusion": "success",
+      "artifactId": 14586681605,
+      "artifactDigest": "sha256:1c3857277d754005e2f96ee14a7d3dede6a3d91c0665d5c69ee40f961a6d4735",
+      "reportHashes": {
+        "manifest.json": "a7855bfa0099e302aad8943dc843e1a452d44dafb31a758980fe05586503a771",
+        "smoke-development.json": "be981acb0631f35563f590a0962b9a16df802f5f040a49ba8711646dd4a4317d",
+        "signup-development.json": "dd1ad0e9f5ff2df6030341b08bc15480cefed1b2a7c6559a31d4834133500b56",
+        "web-development.json": "3bc1870117a9d77d4ce7abeac8d0ed2bc95f1d9a9aa7315c88abef524f5518ba"
+      },
+      "domainChecks": 26,
+      "disposableIdentitiesDeleted": 3,
+      "signupChecks": 5,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "directLambda": 403,
+        "directS3": 403,
+        "billingEnabled": false
+      },
+      "observer": {
+        "environment": "development",
+        "sourceCommit": "00ce03aaa261e01df337932cfd0cb23ed8df7b7d",
+        "runId": "44640475740-1",
+        "checkedAt": "2026-11-19T23:53:16.836Z",
+        "reportSha256": "e43ce929fdc328caf17a63a2db123a0878273d92b052f5cbd5467f83a30ae380",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "awaitingParticipant": true,
+        "alarmCount": 9,
+        "alarmNotificationsConfigured": false
+      }
+    },
+    {
+      "environment": "testing",
+      "sourceCommit": "1c0f1b381e74ed0cf552344f462c5bd741589863",
+      "sourceBranch": "testing",
+      "dirty": false,
+      "release": "5c9a47ea84932b17",
+      "ciRun": 44641440002,
+      "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44641440002",
+      "conclusion": "success",
+      "artifactId": 14587790378,
+      "artifactDigest": "sha256:7eb6a6d1f9fce065e16c5bdd221cd6492e19c58deb6a33d8a6af4bcdac54b83a",
+      "reportHashes": {
+        "manifest.json": "f60327fac4fc9317d132e5cd8257b970c132e14edeb11f3ccadec3b4f226d53b",
+        "smoke-testing.json": "e68e89ee056bcad3faa6e5d5cadcb3d16df32fdb5f60dfff64a56d1a17f463ef",
+        "signup-testing.json": "706e2013215748589fe5fba5a5923b8d1f70155e1bc4cf4f7eea164170a89ffe",
+        "web-testing.json": "aecf2337ba73249e4313b52d49b6b87b0515c1522f56a76a3d5fe5f200b8c37f"
+      },
+      "domainChecks": 26,
+      "disposableIdentitiesDeleted": 3,
+      "signupChecks": 5,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "directLambda": 403,
+        "directS3": 403,
+        "billingEnabled": false
+      },
+      "observer": {
+        "environment": "testing",
+        "sourceCommit": "1c0f1b381e74ed0cf552344f462c5bd741589863",
+        "runId": "44641440002-1",
+        "checkedAt": "2026-11-20T00:00:10.088Z",
+        "reportSha256": "bc1fb5ed167150097e1d89a3fca371bc1da295d08e2bc27283cf905f869feab5",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "awaitingParticipant": true,
+        "alarmCount": 9,
+        "alarmNotificationsConfigured": false
+      }
+    },
+    {
+      "environment": "production",
+      "sourceCommit": "e1dae94c2c69ce7a50ebe11ee865ecbef190c61b",
+      "sourceBranch": "main",
+      "dirty": false,
+      "release": "5c9a47ea84932b17",
+      "ciRun": 44642357476,
+      "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44642357476",
+      "conclusion": "success",
+      "artifactId": 14587367001,
+      "artifactDigest": "sha256:d3ab265a7d6513dd1240e35233a7c7b818a27e96138e5896c05722d8846aa7fa",
+      "reportHashes": {
+        "manifest.json": "6f78d75a54a97812f95089581d29b8ccf4e6fee497710eaacd531983a08d375c",
+        "smoke-production.json": "b9cbc408e27b4915c148818b45834f92e23c6dea3ebff3f96fdedfb88faae195",
+        "signup-production.json": "07e5b3586cdde616f53bafb08c7997f39b6e7a02903e317bd765a97784107f0d",
+        "web-production.json": "19e34497bc0485f1cb828e3b6b5875651a06d09ba5a48c58d506c70ea54b68cd"
+      },
+      "domainChecks": 26,
+      "disposableIdentitiesDeleted": 3,
+      "signupChecks": 5,
+      "web": {
+        "ssr": 200,
+        "staticAsset": 200,
+        "registration": 200,
+        "hostedSignup": 302,
+        "directLambda": 403,
+        "directS3": 403,
+        "billingEnabled": false
+      },
+      "observer": {
+        "environment": "production",
+        "sourceCommit": "e1dae94c2c69ce7a50ebe11ee865ecbef190c61b",
+        "runId": "44642357476-1",
+        "checkedAt": "2026-11-20T00:06:35.613Z",
+        "reportSha256": "64564b7031d364abd3652ccc7be9b7eac26f20d2bbcb76982cac610a5db556a3",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "awaitingParticipant": true,
+        "alarmCount": 9,
+        "alarmNotificationsConfigured": false
+      }
+    }
+  ],
+  "independentObserver": {
+    "ciRun": 44643237388,
+    "ciUrl": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44643237388",
+    "event": "workflow_dispatch",
+    "conclusion": "success",
+    "receipt": {
+      "environment": "production",
+      "sourceCommit": "e1dae94c2c69ce7a50ebe11ee865ecbef190c61b",
+      "runId": "44643237388-1",
+      "checkedAt": "2026-11-20T00:07:23.289Z",
+      "reportSha256": "da15651e225797716010ada5a1ab77037f6c79ec4702181a099be3fdc9f1a95e",
+      "privateReadBack": true,
+      "encrypted": true,
+      "versioned": true,
+      "billingEnabled": false,
+      "awaitingParticipant": true,
+      "alarmCount": 9,
+      "alarmNotificationsConfigured": false
+    },
+    "futureScheduleExecution": "not-yet-observed"
+  },
+  "productionPostSmoke": {
+    "windowStart": "2026-11-20T00:07:15Z",
+    "windowEnd": "2026-11-20T00:07:27.526Z",
+    "method": "DynamoDB Scan Select=COUNT, ConsistentRead, explicit pagination; no Items returned; tables discovered from stack outputs",
+    "counts": {
+      "access": {
+        "count": 0,
+        "scannedCount": 0,
+        "pages": 1
+      },
+      "assets": {
+        "count": 0,
+        "scannedCount": 0,
+        "pages": 1
+      },
+      "inspections": {
+        "count": 0,
+        "scannedCount": 0,
+        "pages": 1
+      }
+    },
+    "caveat": "Individually consistent reads, not a cross-table transaction; does not measure visitors or Cognito accounts without a provisioned workspace."
+  },
+  "privacy": {
+    "registry": "private",
+    "observations": "private-aggregates-only",
+    "noteTextExported": false,
+    "authorValuesExported": false,
+    "businessDataWritesByObserver": false,
+    "publicWorkflowArtifactsContainPilotReports": false
+  },
+  "verificationLimits": [
+    "No real participant enrolled or four weeks elapsed.",
+    "Future cron execution is configured; independent workflow execution was verified manually.",
+    "CloudWatch alarms have no notification actions; notification delivery is not verified.",
+    "Weekly freezes and time boundaries are tested with technical data, not presented as real pilot weeks."
+  ]
+}

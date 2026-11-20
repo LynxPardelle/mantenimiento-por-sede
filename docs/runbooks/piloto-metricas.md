@@ -1,6 +1,6 @@
 # Observación privada del piloto de SedePulso
 
-Esta guía permite retomar TASK-006 desde remoto. La instrumentación está implementada en código; su publicación, ejecución OIDC y persistencia en cada ambiente deben comprobarse con un run real antes de declararlas operativas. Stripe permanece deshabilitado. La observación no crea usuarios, operaciones, inspecciones ni participantes.
+Esta guía permite retomar TASK-006 desde remoto. La instrumentación está publicada y su ejecución OIDC, persistencia y lectura posterior están verificadas en development, testing y producción, con runs `SUCCESS` y una ejecución independiente en producción: [cierre técnico](../releases/2026-11-19-piloto.md). Stripe permanece deshabilitado. La observación no crea usuarios, operaciones, inspecciones ni participantes.
 
 ## Punto de partida y estado comercial
 
@@ -84,7 +84,7 @@ Cada entrada permite únicamente:
 
 | Campo | Regla |
 | --- | --- |
-| `code` | Código anónimo estable, minúsculas y guiones; único, hasta 64 caracteres |
+| `code` | Código de cohorte estable sin nombres, minúsculas y guiones; único, hasta 64 caracteres |
 | `orgId`, `siteId` | Alcance exacto privado y existente; no nombres ni correos; una entrada por organización/sede |
 | `timeZone` | Zona IANA explícita de la sede, validada por `Intl`; no inferirla del navegador ni del observador |
 | `startDate` | Día local válido de inicio; cuatro ventanas consecutivas de siete días |
@@ -95,7 +95,7 @@ Cada entrada permite únicamente:
 
 `schemaVersion` debe ser `1`; `cohorts` es un array. Campos extra, códigos o ámbitos duplicados y formatos inválidos detienen el cálculo; un error no se convierte en reporte saludable vacío. No cambiar código, alcance, zona o inicio para reescribir la historia de una cohorte existente.
 
-Antes de que una persona autorizada incorpore `enrolled-real`, debe existir evidencia privada de: operación real, alcance y sede consentidos, responsables por rol, permiso para tratar la evidencia mínima, fecha del acuerdo, zona e inicio, objetivos y volumen mínimo acordados, línea base y criterio de utilidad de notas. Conservar referencias anónimas a esa evidencia fuera del registro; el esquema no admite nombres, correos, notas, documentos de consentimiento ni campos adicionales.
+Antes de que una persona autorizada incorpore `enrolled-real`, debe existir evidencia privada de: operación real, alcance y sede consentidos, responsables por rol, permiso para tratar la evidencia mínima, fecha del acuerdo, zona e inicio, objetivos y volumen mínimo acordados, línea base y criterio de utilidad de notas. Conservar referencias sin datos personales a esa evidencia fuera del registro; el esquema no admite nombres, correos, notas, documentos de consentimiento ni campos adicionales.
 
 El registro no se autorrellena a partir de actividad, `plan=pilot`, `signupSource=cognito`, nombres con “prueba” o conteos globales. Las ejecuciones técnicas sólo se clasifican con procedencia controlada. El rol observador puede leer el registro pero **no modificarlo**. La inscripción o corrección exige una identidad administrativa autorizada y revisión del alcance; no hay alta automática, contacto a terceros ni consentimiento presumido.
 
@@ -114,7 +114,7 @@ La retención automática se aplica exclusivamente a cada prefijo `<ambiente>/re
 
 La primera semana cerrada se escribe con precondición de ausencia. Si ya existe, el observador valida y reutiliza ese documento en los cálculos de `latest`, sin reemplazarlo por una reconstrucción posterior. Es un congelado a nivel de aplicación, **no S3 Object Lock ni un almacén inalterable**. Una corrección posterior requiere evidencia privada y procedimiento explícito; no borrar o sobreescribir un cierre para mejorar resultados.
 
-El colector proyecta únicamente claves técnicas necesarias, estado y fechas. La presencia de nota/autor se evalúa en DynamoDB con filtros; **el texto de nota y el valor de autor no salen de DynamoDB**. Los identificadores de equipo e inspección se usan sólo en memoria para relacionar datos; los reportes persistidos contienen agregados y códigos anónimos. El registro sigue siendo sensible por su asociación al tenant y nunca se publica.
+El colector proyecta únicamente claves técnicas necesarias, estado y fechas. La presencia de nota/autor se evalúa en DynamoDB con filtros; **el texto de nota y el valor de autor no salen de DynamoDB**. Los identificadores de equipo e inspección se usan sólo en memoria para relacionar datos; los reportes persistidos contienen agregados y códigos de cohorte. El registro privado permite relacionar esos códigos con la organización y sede: no se presenta esta separación como anonimización irreversible. El registro sigue siendo sensible y nunca se publica.
 
 ## Permisos y límite de servicio
 
@@ -157,7 +157,7 @@ Referencias operativas: [actualización aproximada de ItemCount en DynamoDB](htt
 
 ## Plantilla privada: semana 0 a semana 4
 
-Copiar esta estructura a una bitácora privada fuera del repositorio. Es una plantilla vacía, no evidencia de cliente ni entrada adicional para `registry.json`. Usar códigos anónimos; `pendiente` o `null` significa sin medir, nunca cero.
+Copiar esta estructura a una bitácora privada fuera del repositorio. Es una plantilla vacía, no evidencia de cliente ni entrada adicional para `registry.json`. Usar códigos de cohorte sin nombres; `pendiente` o `null` significa sin medir, nunca cero.
 
 | Sección | Campos por completar y evidencia mínima |
 | --- | --- |
