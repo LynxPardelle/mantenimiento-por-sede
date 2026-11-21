@@ -1,7 +1,7 @@
 ---
 goal: 'SedePulso: registrar y completar una inspección por sede con microservicios AWS y Angular SSR en Lambda'
 date_created: 2026-11-17
-date_updated: 2026-11-20
+date_updated: 2026-11-21
 status: 'In Progress'
 tags: ['feature', 'angular', 'aws-sam', 'microservices', 'ssr']
 ---
@@ -205,3 +205,5 @@ La mejora conserva el corte de las 07:17 GMT-6 y añade otro diario a las 15:57 
 La promoción PR #41 → #42 → #43 verificó development `cf61cb7bf0116554c65235c968fc9efa13a6b0d3`, run `44818569583`; testing `7e8a74c03abdf10da024e909f83f38d232b832c1`, run `44819681853`; production `1c977584fc55b2b41aa492644162cfed57d04e9c`, run `44820926265`. Los tres aprobaron 216 pruebas, build SSR, lint, 60 comprobaciones de dominio, cinco de registro y web/orígenes privados. Limpiaron sus tres identidades técnicas por ambiente y sus informes privados coincidieron con SHA/run/intento, AES256, versionado, cinco stacks completos, once alarmas OK y facturación deshabilitada.
 
 La ejecución programada real solicitada queda acreditada por `44818232242`; su código de cálculo/persistencia coincide con el publicado. El respaldo nuevo seguía sin run visible a las `22:13:34 UTC` y se conserva `not-yet-observed`, sin atribuirle la primera recuperación ni declarar resuelta la puntualidad interna de GitHub. El [cierre de programación](../docs/releases/2026-11-20-observador-programado.md) y sus [recibos saneados](../docs/releases/2026-11-20-observador-programado-evidence.json) conservan ambas situaciones. TASK-006 continúa pendiente de operación real y observación comercial; Stripe sigue deshabilitado.
+
+Seguimiento del 21 de noviembre: el respaldo `44858427495` y el principal `44944669245` terminaron con `event=schedule`, expresiones explícitas `57 21 * * *` y `17 13 * * *`, y SHA publicado `0755774a7ce91030a993920886fec1b24ff47b02`. Se leyeron sus reportes privados con coincidencia de SHA/run/intento, AES256, versionado, cinco stacks completos, once alarmas OK y guardas de facturación deshabilitada. La salud actual volvió a comprobar los cinco stacks, once alarmas y HTTPS/configuración de los tres ambientes; el informe más reciente estaba dentro de 26 horas. El [nuevo cierre](../docs/releases/2026-11-21-observador-programado.md) y sus [recibos técnicos](../docs/releases/2026-11-21-observador-programado-evidence.json) cierran el pendiente de observar el respaldo sin reescribir evidencia previa. Ambas ejecuciones fueron tardías respecto al corte previo: se acredita entrega, no puntualidad ni reparación de una causa interna de GitHub. Esta comprobación no acredita avance comercial del piloto y mantiene Stripe deshabilitado.
