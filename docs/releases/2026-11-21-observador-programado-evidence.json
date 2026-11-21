@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "product": "SedePulso",
+  "task": "TASK-022",
+  "enables": "TASK-006",
+  "kind": "scheduled-observer-follow-up",
+  "verifiedAt": "2026-11-21T21:48:45.756Z",
+  "publicationDateLocal": "2026-11-21",
+  "timeZone": "Etc/GMT+6",
+  "previousEvidence": "2026-11-20-observador-programado-evidence.json",
+  "backupVerification": {
+    "previousStatus": "not-yet-observed",
+    "status": "verified-real-schedule-with-private-receipt",
+    "run": 44858427495
+  },
+  "runs": [
+    {
+      "kind": "backup",
+      "event": "schedule",
+      "branch": "main",
+      "sourceCommit": "0755774a7ce91030a993920886fec1b24ff47b02",
+      "run": 44858427495,
+      "attempt": 1,
+      "workflowId": 424456514,
+      "url": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44858427495",
+      "conclusion": "success",
+      "createdAt": "2026-11-21T02:55:06Z",
+      "completedAt": "2026-11-21T02:55:34Z",
+      "scheduleExpression": "57 21 * * *",
+      "scheduleExpressionSource": "workflow-trigger-log",
+      "timingComparison": {
+        "precedingConfiguredCutUtc": "2026-11-20T21:57:00Z",
+        "inferredDelaySeconds": 17886,
+        "assumption": "comparison-to-the-preceding-configured-cut; not-an-internal-dispatch-timestamp"
+      },
+      "privateReceipt": {
+        "checkedAt": "2026-11-21T02:55:14.150Z",
+        "sourceCommit": "0755774a7ce91030a993920886fec1b24ff47b02",
+        "runId": "44858427495-1",
+        "reportSha256": "4094a12d26b0647b0b3261307221303405bbb984e84a40534eced3decab2060a",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "signupEnabled": true,
+        "businessWrites": false,
+        "stackCount": 5,
+        "alarmCount": 11
+      }
+    },
+    {
+      "kind": "primary",
+      "event": "schedule",
+      "branch": "main",
+      "sourceCommit": "0755774a7ce91030a993920886fec1b24ff47b02",
+      "run": 44944669245,
+      "attempt": 1,
+      "workflowId": 424456514,
+      "url": "https://github.com/LynxPardelle/mantenimiento-por-sede/actions/runs/44944669245",
+      "conclusion": "success",
+      "createdAt": "2026-11-21T20:08:28Z",
+      "completedAt": "2026-11-21T20:08:56Z",
+      "scheduleExpression": "17 13 * * *",
+      "scheduleExpressionSource": "workflow-trigger-log",
+      "timingComparison": {
+        "precedingConfiguredCutUtc": "2026-11-21T13:17:00Z",
+        "inferredDelaySeconds": 24688,
+        "assumption": "comparison-to-the-preceding-configured-cut; not-an-internal-dispatch-timestamp"
+      },
+      "privateReceipt": {
+        "checkedAt": "2026-11-21T20:08:36.568Z",
+        "sourceCommit": "0755774a7ce91030a993920886fec1b24ff47b02",
+        "runId": "44944669245-1",
+        "reportSha256": "38ebd173b5c56a8969168c37fd3f2d65cea877e0ba31145604b1324edc6d1863",
+        "privateReadBack": true,
+        "encrypted": true,
+        "versioned": true,
+        "billingEnabled": false,
+        "signupEnabled": true,
+        "businessWrites": false,
+        "stackCount": 5,
+        "alarmCount": 11
+      }
+    }
+  ],
+  "latestScheduledRun": 44944669245,
+  "latestReportAgeHours": 1.6692188888888888,
+  "freshnessThresholdHours": 26,
+  "liveHealth": {
+    "checkedAt": "2026-11-21T21:46:16.909Z",
+    "stacks": [
+      {
+        "service": "platform",
+        "status": "UPDATE_COMPLETE"
+      },
+      {
+        "service": "pilot",
+        "status": "UPDATE_COMPLETE"
+      },
+      {
+        "service": "assets",
+        "status": "UPDATE_COMPLETE"
+      },
+      {
+        "service": "inspections",
+        "status": "UPDATE_COMPLETE"
+      },
+      {
+        "service": "frontend",
+        "status": "UPDATE_COMPLETE"
+      }
+    ],
+    "alarmCount": 11,
+    "alarmStates": {
+      "OK": 11,
+      "ALARM": 0,
+      "INSUFFICIENT_DATA": 0
+    },
+    "alarmNotificationsConfigured": false,
+    "web": [
+      {
+        "environment": "development",
+        "https": 200,
+        "health": "ok",
+        "signupEnabled": true,
+        "billingEnabled": false
+      },
+      {
+        "environment": "testing",
+        "https": 200,
+        "health": "ok",
+        "signupEnabled": true,
+        "billingEnabled": false
+      },
+      {
+        "environment": "production",
+        "https": 200,
+        "health": "ok",
+        "signupEnabled": true,
+        "billingEnabled": false
+      }
+    ],
+    "billingEnabled": false
+  },
+  "privacy": {
+    "privateReportsPublished": false,
+    "cohortDataPublished": false,
+    "businessMetricsPublished": false,
+    "weeklyReviewDataPublished": false
+  },
+  "limitations": [
+    "Both configured cron expressions now have real schedule events and matching private receipts; no manual dispatch was used.",
+    "Both events were created hours after the preceding configured cut; this proves execution, not punctuality or an internal scheduler root cause.",
+    "Historical receipts are preserved; first pre-change recovery is not attributed to the additional cron.",
+    "Technical health does not establish participant enrollment, elapsed pilot weeks, measured improvement or commercial acceptance.",
+    "Alarm states and enabled workflow do not prove delivery of notifications to people."
+  ]
+}

@@ -86,6 +86,8 @@ Para acreditar la programación, consultar `gh run list --workflow piloto.yml --
 
 El [cierre del 20 de noviembre](../releases/2026-11-20-observador-programado.md) conserva el primer `schedule` exitoso con recibo privado y lo separa del respaldo nuevo, que seguía pendiente de observación al corte documentado. Para actualizar ese estado exigir un run programado real y su reporte coincidente; la publicación del YAML no sustituye esa evidencia.
 
+El [seguimiento del 21 de noviembre](../releases/2026-11-21-observador-programado.md) comprobó después ambos cron desde el SHA publicado: respaldo `44858427495` y principal `44944669245`, con expresiones explícitas en los logs y reportes privados coincidentes. El estado histórico del respaldo pendiente se conserva en su recibo original; la nueva evidencia acredita entrega real, sin declarar puntualidad o una causa interna para las demoras.
+
 El heartbeat de Codex `sedepulso-seguimiento-del-piloto` está activo en este chat a las **08:00 GMT-6**. Revisa el último resultado, frescura y pendientes; depende de la aplicación local y de sus accesos, sin SLA. No sustituye al workflow ni crea semanas de uso o participantes.
 
 Su prompt se actualizó mediante la herramienta de automatizaciones durante TASK-021: conserva horario, chat y estado activo, y ahora comprueba cinco stacks, once alarmas y `weeklyReviews` junto a sus comparaciones. Distingue estas declaraciones de los snapshots automáticos, conserva faltantes y no escribe mediciones o participantes inventados.
